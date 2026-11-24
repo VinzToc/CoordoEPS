@@ -93,6 +93,10 @@ tr[data-o]{cursor:pointer}
 .mt{position:absolute;top:0;bottom:0;border-left:1px solid rgba(255,255,255,.12);font-size:.66rem;color:var(--mut);padding-left:3px;white-space:nowrap}
 .td{position:absolute;top:0;bottom:0;border-left:2px solid var(--ko);z-index:1}
 .cb{position:absolute;height:20px;border-radius:6px;font-size:.68rem;padding:2px 5px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:#06231a;font-weight:800;border:1px solid #0006;cursor:pointer}
+.ev{position:absolute;width:11px;height:11px;margin-left:-5px;transform:rotate(45deg);background:#fff;border:2px solid #06231a;z-index:2;cursor:help}.ev.ccf{background:#ff3b3b}
+.pl{position:absolute;top:0;bottom:0;border-left:2px dashed rgba(255,214,10,.45)}
+.evl{display:flex;gap:4px;align-items:center;margin:3px 0;flex-wrap:nowrap}.evl select,.evl input{padding:4px 5px;font-size:13px}
+textarea{width:100%;resize:vertical}
 .lgd{display:flex;flex-wrap:wrap;gap:10px;font-size:.78rem;margin:8px 0}
 /* fenêtres */
 .ov{position:fixed;inset:0;background:#000a;display:flex;align-items:flex-start;justify-content:center;z-index:50;padding:4vh 10px;overflow:auto}
@@ -109,7 +113,7 @@ tr[data-o]{cursor:pointer}
 /* impression */
 @media print{
  body{background:#fff;color:#000;font-size:11px}body::before,.bnav,header .btn,.np,.ov{display:none!important}
- body[data-pr] .card:not(.pr){display:none}body[data-pr] .bar{display:none}
+ body[data-pr] .card:not(.prx){display:none}body[data-pr] .bar{display:none}
  .card{border:1px solid #999;background:#fff;break-inside:avoid}.card h3{color:#000}
  .wg,.gt,.tw{background:#fff;overflow:visible;border-color:#999}.wg .dh,.gt .gl,.gt .gn,.t thead th{background:#eee;color:#000}.gt .gl{position:static}
  .t td{background:#fff!important;color:#000}.help,.mt,.gt .gl small{color:#444}.gt .gr{min-width:0}
@@ -140,7 +144,7 @@ tr[data-o]{cursor:pointer}
 <script src="nouveautes.js"></script>
 <script>
 {
-const APP='coordoeps',LS='CoordoEPS_v1',FMT='CoordoEPS',VER='1.0.0';
+const APP='coordoeps',LS='CoordoEPS_v1',FMT='CoordoEPS',VER='1.1.0';
 const $=s=>document.querySelector(s),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid=()=>Math.random().toString(36).slice(2,9);
 const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
@@ -166,7 +170,10 @@ const NIV=['6e','5e','4e','3e','2nde','1re','Tle','2nde Pro','1re Pro','Tle Pro'
 function guessNiv(cl){const s=String(cl).toUpperCase().replace(/\s+/g,'');
  if(/CAP/.test(s))return/^(1|CAP1)/.test(s)||/CAP.?1/.test(s)?'CAP 1':'CAP 2';const pro=/PRO|BAC|MRC|MELEC|MSPC|ASSP|GA|AGORA|MCV/.test(s);
  if(/^6/.test(s))return'6e';if(/^5/.test(s))return'5e';if(/^4/.test(s))return'4e';if(/^3/.test(s))return'3e';
- if(/^(2|SECONDE|SEC)/.test(s))return pro?'2nde Pro':'2nde';if(/^(1|PREM)/.test(s))return pro?'1re Pro':'1re';if(/^(T|TERM)/.test(s))return pro?'Tle Pro':'Tle';return'Autre'}
+ if(/^(2|SECONDE|SEC)/.test(s))return pro?'2nde Pro':'2nde';if(/^(1|PREM)/.test(s))return pro?'1re Pro':'1re';if(/^(T|TERM)/.test(s))return pro?'Tle Pro':'Tle';
+ const m=/(6E|5E|4E|3E|2NDE|SECONDE|1RE|PREMIERE|TLE|TERM)/.exec(s.normalize('NFD').replace(/[\u0300-\u036f]/g,''));if(m)return guessNiv(m[1]+(pro?' PRO':''));return'Autre'}
+const EVT=['Fin de cycle','CCF','CCF rattrapage','Diagnostique','Intermédiaire','Épreuve ponctuelle'];
+const isCCF=t=>/CCF|ponctuelle/i.test(t||'');
 const STAT={cert:['Certifié(e)',20],agr:['Agrégé(e)',17],contr:['Contractuel(le)',20],tzr:['TZR',20],stag:['Stagiaire',10],autre:['Autre',18]};
 const ITYPES=['Gymnase','Salle spécialisée','Plateau extérieur','Piste / stade','Piscine','Mur d\'escalade','Site naturel','Autre'];
 const PAL=['#4fb3ff','#ff9f43','#d68bff','#ff6b8b','#5fe0e0','#ffd60a','#a0e85f','#ff7f50','#9aa7ff','#f7a8ff','#7ff09a','#e0c080'];
@@ -179,8 +186,9 @@ function save(){FER=WK=null;S.maj=new Date().toISOString();try{localStorage.setI
 function saveU(){try{localStorage.setItem(LS+'_ui',JSON.stringify(U))}catch(e){}}
 const KL=cl=>S.classes[cl]||(S.classes[cl]={niveau:guessNiv(cl),prof:'',eval:'T',cren:[],cycles:[]});
 const eff=cl=>E.filter(e=>e.classe===cl).length;
+const maeCls=()=>[...new Set(E.map(e=>e.classe).filter(Boolean))].filter(c=>!S.classes[c]).sort((a,b)=>a.localeCompare(b,'fr',{numeric:true}));
 const nivOf=cl=>(S.classes[cl]||{}).niveau||guessNiv(cl);
-const allCls=()=>[...new Set([...E.map(e=>e.classe).filter(Boolean),...Object.keys(S.classes)])].sort((a,b)=>{const x=NIV.indexOf(nivOf(a)),y=NIV.indexOf(nivOf(b));return x-y||a.localeCompare(b,'fr',{numeric:true})});
+const allCls=()=>Object.keys(S.classes).sort((a,b)=>{const x=NIV.indexOf(nivOf(a)),y=NIV.indexOf(nivOf(b));return x-y||a.localeCompare(b,'fr',{numeric:true})});
 const selCl=()=>{const L=allCls();if(!L.includes(U.cl))U.cl=L[0]||'';return U.cl};
 
 /* ───── Calendrier : identique à SuiviProf EPS (année, vacances, fériés, semaines A/B, interruptions) ───── */
@@ -246,7 +254,9 @@ function controles(cl){const K=KL(cl),o=O(),w=[];if(!K.cren.length){w.push('aucu
  const cy=K.cycles;cy.filter(c=>!c.du||!c.au).forEach(c=>w.push(`« ${c.nom} » sans dates`));cy.filter(c=>c.du&&!c.ca).forEach(c=>w.push(`« ${c.nom} » sans CA`));
  const all=slots(cl,o.debut,o.fin,null).out,cov=x=>cy.filter(c=>c.du&&c.au&&c.du<=x.date&&x.date<=c.au&&(c.cren||[]).includes(x.c.id)).length;
  let nc=0,dbl=0;for(const x of all){const n=cov(x);if(!n)nc++;else if(n>1)dbl++}
- if(nc)w.push(`${nc} séance(s) hors cycle`);if(dbl)w.push(`${dbl} séance(s) partagées par 2 cycles`);return w}
+ if(nc)w.push(`${nc} séance(s) hors cycle`);
+ const ne=cy.filter(c=>c.du&&!(c.evals||[]).some(v=>v.date)).length;if(ne)w.push(`${ne} cycle(s) sans date d'évaluation`);
+ const ho=cy.flatMap(c=>(c.evals||[]).filter(v=>v.date&&!cyS(cl,c).out.some(x=>x.date===v.date))).length;if(ho)w.push(`${ho} évaluation(s) un jour sans séance`);if(dbl)w.push(`${dbl} séance(s) partagées par 2 cycles`);return w}
 /* Occupation des installations date par date (installation du cycle, sinon celle du créneau) */
 function occupation(){const M=new Map();
  for(const cl of allCls())for(const cy of KL(cl).cycles)for(const x of cyS(cl,cy).out){const i=cyInst(cl,cy,x.c);if(!i)continue;const k=i+'|'+x.date;if(!M.has(k))M.set(k,[]);M.get(k).push({cl,cy,c:x.c})}
@@ -267,7 +277,7 @@ const head=(t,sub)=>{const m=OM;OM='';return `<div class="bar"><h2>${t}</h2><spa
 const optP=(v,vide='— enseignant —')=>`<option value="">${vide}</option>`+S.profs.map(p=>`<option value="${p.id}" ${v===p.id?'selected':''}>${esc(pn(p.id))}</option>`).join('');
 const optI=(v,vide='— installation —')=>`<option value="">${vide}</option>`+S.inst.map(i=>`<option value="${i.id}" ${v===i.id?'selected':''}>${esc(i.nom)}</option>`).join('');
 const clChips=(oc,o='cl')=>`<div class="ocl np">${allCls().map(c=>`<button data-o="${o}" data-c="${esc(c)}" class="${c===oc?'on':''}">${esc(c)}<small>${esc(KL(c).niveau)}</small></button>`).join('')}</div>`;
-function noClass(){return `<div class="empty"><b>Aucune classe pour le moment</b>Les classes viennent de la liste Pronote partagée par Mes Apps EPS. Vous pouvez aussi ajouter des classes à la main (onglet Emplois du temps) ou essayer avec un exemple.<div class="bar" style="justify-content:center;margin-top:14px"><button class="btn y" data-g="list">📂 Charger la liste des élèves</button><button class="btn r" data-nav="edt">＋ Ajouter des classes</button><button class="btn r" data-g="demo">🧪 Essayer avec un exemple</button></div></div>`}
+function noClass(){return `<div class="empty"><b>Aucune classe pour le moment</b>La programmation se prépare sans élèves : saisissez simplement les noms des classes et des groupes prévus pour l'année (onglet Emplois du temps). Les listes Pronote ne sont utiles qu'à la rentrée, dans SuiviProf EPS.<div class="bar" style="justify-content:center;margin-top:14px"><button class="btn y" data-nav="edt">＋ Saisir les classes et groupes</button><button class="btn r" data-g="demo">🧪 Essayer avec un exemple</button></div></div>`}
 
 /* 1. Année */
 function renderCal(){const o=O(),cls=allCls();
@@ -275,10 +285,11 @@ function renderCal(){const o=O(),cls=allCls();
  let h=head('📅 Année scolaire '+annee(),"Calendrier commun à toute l'équipe. Il est transmis avec la programmation : chaque collègue retrouve les mêmes vacances, fériés, semaines A/B et périodes dans SuiviProf EPS.")+'<div class="og">';
  h+=`<div class="card full"><h3>Établissement</h3><div class="rw"><label style="flex:2">Nom de l'établissement<input data-k="etab" value="${esc(S.etab)}" placeholder="ex : Lycée Jean Moulin"></label><label style="flex:1">Coordonnateur EPS<input data-k="auteur" value="${esc(S.auteur)}" placeholder="Nom du coordonnateur"></label></div>
  ${S.profs.length||S.inst.length?'':'<div class="bar"><button class="btn r s" data-g="demo">🧪 Remplir avec un exemple complet</button><span class="help">pour découvrir l\'application</span></div>'}</div>`;
+ h+=`<div class="card full"><h3>Préparer l'année suivante</h3><div class="rw"><span class="help" style="flex:1">La programmation se prépare en fin d'année, sans les listes Pronote : on part de l'année en cours, décalée d'un an (mêmes jours de la semaine), puis on ajuste classes, services, cycles et évaluations.</span><button class="btn y" data-o="next">➡️ Préparer ${+annee().slice(0,4)+1}-${+annee().slice(0,4)+2}</button></div></div>`;
  h+=`<div class="card"><h3>Année scolaire et vacances</h3><div class="rw"><label style="flex:1">Rentrée<input type="date" data-k="debut" value="${o.debut}"></label><label style="flex:1">Fin des cours<input type="date" data-k="fin" value="${o.fin}"></label><label>Zone<select data-k="zone">${['A','B','C','Corse'].map(z=>`<option ${o.zone===z?'selected':''}>${z}</option>`).join('')}</select></label></div>
  <label class="chk"><input type="checkbox" data-k="als" ${o.als?'checked':''}> Alsace-Moselle (Vendredi saint et 26 décembre fériés)</label>
  <label class="chk"><input type="checkbox" data-k="pent" ${o.pent?'checked':''}> Lundi de Pentecôte travaillé (journée de solidarité)</label>
- <div class="rw"><button class="btn s r" data-o="vac-def">Calendrier officiel 2026-2027 intégré</button><button class="btn s r" data-o="vac-net">🌐 Mettre à jour depuis data.education.gouv.fr</button></div>
+ <div class="rw">${annee()==='2026-2027'?'<button class="btn s r" data-o="vac-def">Calendrier officiel 2026-2027 intégré</button>':''}<button class="btn s r" data-o="vac-net">🌐 Mettre à jour depuis data.education.gouv.fr</button></div>
  ${o.vac.map((x,i)=>`<div class="rw"><input type="text" data-k="vac" data-i="${i}" data-p="nom" value="${esc(x.nom)}" aria-label="Nom"><input type="date" data-k="vac" data-i="${i}" data-p="du" value="${x.du}" aria-label="Premier jour"><input type="date" data-k="vac" data-i="${i}" data-p="au" value="${x.au}" aria-label="Dernier jour"><button class="btn s k" data-o="vac-rm" data-i="${i}">✕</button></div>`).join('')}
  <div class="rw"><button class="btn s r" data-o="vac-add">＋ Période de vacances</button></div><p class="help">Dates : premier jour sans cours → veille de la reprise.</p>
  <label>Jours fériés en semaine (calculés automatiquement)</label><div class="chips">${fer.map(([d,n])=>`<span>${esc(frD(d))} · ${esc(n)}</span>`).join('')}</div></div>`;
@@ -289,6 +300,23 @@ function renderCal(){const o=O(),cls=allCls();
  h+=`<div class="card full"><h3>Semaines A / B</h3><div class="rw"><span class="help">Semaine de la rentrée :</span><select data-k="ab" aria-label="Semaine de la rentrée"><option ${o.ab==='A'?'selected':''}>A</option><option ${o.ab==='B'?'selected':''}>B</option></select><span class="help">L'alternance saute les semaines de vacances. Touchez une semaine pour inverser l'alternance à partir de celle-ci.</span></div>
  <div class="wks">${[...weeks()].map(([m,w])=>w.school?`<button class="${w.L}${o.flip.includes(m)?' fl':''}" data-o="flip" data-m="${m}">${esc(sh(m))}<b>${w.L}</b>${o.flip.includes(m)?'<br><small>↺ bascule</small>':''}</button>`:`<button class="vac" disabled>${esc(sh(m))}<br><small>vacances</small></button>`).join('')}</div></div></div>`;
  $('#view').innerHTML=h}
+
+function nextModal(){const o=O(),y=+o.debut.slice(0,4),nd=(y+1)+o.debut.slice(4),nf=(y+2)+o.fin.slice(4);
+ modal(`<h3>➡️ Préparer l'année ${y+1}-${y+2}</h3><p class="help">Les classes, l'équipe, les installations et les créneaux sont conservés. Les périodes interruptives et les bascules A/B de l'année en cours sont effacées. Les vacances sont chargées depuis le calendrier officiel en ligne si possible, sinon à saisir.</p>
+ <form id="f"><div class="rw"><label style="flex:1">Rentrée ${y+1}<input type="date" name="du" value="${nd}" required></label><label style="flex:1">Fin des cours<input type="date" name="au" value="${nf}" required></label></div>
+ <label class="chk"><input type="checkbox" name="cy" checked> Reconduire les cycles et les évaluations (décalés du même nombre de semaines, donc mêmes jours)</label>
+ <label class="chk"><input type="checkbox" name="pf"> Retirer les enseignants des classes (nouvelle répartition des services)</label>
+ <label class="chk"><input type="checkbox" name="bk" checked> Télécharger d'abord la sauvegarde de l'année ${y}-${y+1}</label>
+ <div class="bar"><button class="btn y">Préparer l'année</button><span class="sp"></span><button type="button" class="btn r" data-m="close">Annuler</button></div><p class="msg" id="nm"></p></form>`,m=>{
+  m.querySelector('#f').onsubmit=async e=>{e.preventDefault();const f=e.target;if(f.bk.checked)dlPack('');
+   const w=Math.round(dd(o.debut,f.du.value)/7)*7,sd=d=>d?addD(d,w):d;
+   o.debut=f.du.value;o.fin=f.au.value<f.du.value?addD(f.du.value,300):f.au.value;o.flip=[];o.inter=[];
+   for(const t of ['T','S'])o.per[t].forEach((p,i,a)=>{p.du=i?sd(p.du):o.debut;p.au=i===a.length-1?o.fin:sd(p.au)});
+   for(const K of Object.values(S.classes)){if(f.pf.checked){K.prof='';K.cren.forEach(c=>c.prof='')}
+    if(f.cy.checked)K.cycles.forEach(c=>{c.du=sd(c.du);c.au=sd(c.au);(c.evals||[]).forEach(v=>v.date=sd(v.date))});else K.cycles=[]}
+   FER=WK=null;let vm;m.querySelector('#nm').textContent='Chargement du calendrier officiel…';
+   try{o.vac=await vacNet();vm='vacances officielles chargées'}catch(x){o.vac=annee()==='2026-2027'?vacDef(o.zone):[];vm=o.vac.length?'calendrier 2026-2027 intégré':'⚠ vacances à saisir (calendrier officiel indisponible)'}
+   OM=`✅ Année ${annee()} préparée : ${vm}. Vérifiez les trimestres, les semaines A/B et les dates des cycles.`;U.view='cal';save();close();render();scrollTo(0,0)}})}
 
 /* 2. Équipe et installations */
 function renderEquipe(){let h=head('👥 Équipe et installations',"Les enseignants de l'équipe EPS, leurs obligations de service, et les installations sportives avec le nombre de classes qu'elles accueillent en même temps.")+'<div class="og">';
@@ -313,14 +341,16 @@ function renderEquipe(){let h=head('👥 Équipe et installations',"Les enseigna
 /* 3. Emplois du temps */
 function renderEdt(){const cls=allCls(),oc=selCl(),K=oc?KL(oc):null,cf=conflits();
  let h=head('🗓️ Emplois du temps',"Pour chaque classe : niveau, enseignant et créneaux d'EPS (jour, horaires, semaines A/B, installation habituelle). La grille et les conflits se mettent à jour à chaque modification.")+'<div class="og">';
- const tr=cls.map(cl=>{const k=KL(cl),n=eff(cl),hh=k.cren.reduce((s,c)=>s+dur(c)*wgt(c),0);
-  return `<tr class="${cl===oc?'on':''}"><td data-o="cl" data-c="${esc(cl)}" style="cursor:pointer"><b>${esc(cl)}</b><br><span class="help">${n?n+' élève(s)':'ajoutée à la main'}</span></td>
+ const tr=cls.map(cl=>{const k=KL(cl),hh=k.cren.reduce((s,c)=>s+dur(c)*wgt(c),0);
+  return `<tr class="${cl===oc?'on':''}"><td data-o="cl" data-c="${esc(cl)}" style="cursor:pointer"><b>${esc(cl)}</b></td>
   <td><select data-k="kniv" data-c="${esc(cl)}" aria-label="Niveau">${NIV.map(v=>`<option ${k.niveau===v?'selected':''}>${v}</option>`).join('')}</select></td>
   <td><select data-k="kprof" data-c="${esc(cl)}" aria-label="Enseignant">${optP(k.prof)}</select></td>
   <td data-o="cl" data-c="${esc(cl)}" style="cursor:pointer">${k.cren.map(c=>`${esc(crLab(c))}${c.inst?' · '+esc(inN(c.inst)):''}${c.prof&&c.prof!==k.prof?' · <i>'+esc(pn(c.prof))+'</i>':''}${cf.ids.has(c.id)?' <b class="ko">⚠</b>':''}`).join('<br>')||'<span class="help">aucun créneau</span>'}</td>
-  <td class="n">${fh(hh)}</td><td>${!n?`<button class="btn s k" data-o="cl-rm" data-c="${esc(cl)}">✕</button>`:''}</td></tr>`}).join('');
+  <td class="n">${fh(hh)}</td><td><button class="btn s k" data-o="cl-rm" data-c="${esc(cl)}" title="Retirer la classe et sa programmation">✕</button></td></tr>`}).join('');
  h+=`<div class="card full"><h3>Classes</h3>${cls.length?`<div class="tw" style="max-height:420px"><table class="t"><thead><tr><th>Classe</th><th>Niveau</th><th>Enseignant</th><th>Créneaux</th><th class="n">h / sem.</th><th></th></tr></thead><tbody>${tr}</tbody></table></div>`:noClass()}
- <form id="fcl" class="rw" style="margin-top:8px"><input type="text" name="nom" required placeholder="Nom de la classe ou du groupe (ex : 2NDE 4, Groupe Natation)" aria-label="Nouvelle classe"><button class="btn s r">＋ Ajouter une classe</button></form></div>`;
+ <form id="fcl" style="margin-top:10px;border-top:1px solid var(--bd);padding-top:6px"><label>Ajouter des classes ou des groupes (noms prévus, sans élèves)</label><textarea name="noms" rows="2" placeholder="2NDE 1, 2NDE 2, 1G 1, Groupe Natation 1re… (séparés par des virgules ou un par ligne)" aria-label="Noms des classes"></textarea>
+ <div class="rw"><select name="niv" aria-label="Niveau"><option value="">Niveau deviné d'après le nom</option>${NIV.map(v=>`<option>${v}</option>`).join('')}</select><button class="btn s y">＋ Ajouter</button><span class="sp"></span><span class="help">Générer :</span><input type="text" name="pre" placeholder="2NDE " style="width:90px;flex:none" aria-label="Préfixe"><input type="number" name="nb" min="1" max="30" placeholder="nb" style="width:64px" aria-label="Nombre"><button type="button" class="btn s r" data-o="gen-cl">→ 2NDE 1, 2NDE 2…</button></div></form>
+ <p class="help">Utilisez si possible les noms de Pronote (ex. « 2NDE 1 ») : à la rentrée, chaque collègue pourra quand même faire correspondre un nom prévu avec sa classe réelle lors de l'import dans SuiviProf EPS.${maeCls().length?` <button class="btn s r" data-o="cl-mae">Reprendre les ${maeCls().length} classe(s) de la liste Mes Apps EPS de cet appareil</button>`:''}</p></div>`;
  if(oc){const k=K;h+=`<div class="card full" id="crc"><h3>Créneaux de la classe ${esc(oc)}</h3>${clChips(oc)}
  ${k.cren.map((c,i)=>`<div class="rw"><select data-k="cr" data-i="${i}" data-p="jour" aria-label="Jour">${[1,2,3,4,5,6].map(j=>`<option value="${j}" ${+c.jour===j?'selected':''}>${JOURS[j]}</option>`).join('')}</select><input type="time" data-k="cr" data-i="${i}" data-p="hd" value="${c.hd}" aria-label="Début"> → <input type="time" data-k="cr" data-i="${i}" data-p="hf" value="${c.hf}" aria-label="Fin">
  <select data-k="cr" data-i="${i}" data-p="sem" aria-label="Semaines"><option value="AB">toutes les semaines</option><option value="A" ${c.sem==='A'?'selected':''}>semaines A</option><option value="B" ${c.sem==='B'?'selected':''}>semaines B</option></select>
@@ -367,24 +397,35 @@ function renderProg(){const cls=allCls(),oc=selCl();
  const K=KL(oc),cy=sortCy(K),ch=caH(oc);
  h+=`<div class="card" id="crc"><h3>Cycles de la classe ${esc(oc)} <span class="help" style="text-transform:none;letter-spacing:0">· ${esc(K.niveau)} · ${esc(pn(K.prof)||'enseignant non désigné')}</span></h3>${clChips(oc,'pcl')}
  ${K.cren.length?'':`<p class="wa">⚠ Cette classe n'a pas encore de créneau : ajoutez-les dans <button class="btn s r" data-nav="edt">🗓️ Emplois du temps</button> pour calculer les séances.</p>`}
- <div class="tw"><table class="t"><thead><tr><th>APSA et CA</th><th>Dates</th><th>Créneaux</th><th>Installation</th><th class="n">Séances</th><th></th></tr></thead><tbody>
+ <div class="tw"><table class="t"><thead><tr><th>APSA et CA</th><th>Dates</th><th>Créneaux</th><th>Installation</th><th>Évaluations</th><th class="n">Séances</th><th></th></tr></thead><tbody>
  ${cy.map(c=>{const r=cyS(oc,c),hh=r.out.reduce((n,x)=>n+dur(x.c),0);return `<tr><td style="min-width:200px"><div class="rw" style="margin:0;flex-wrap:nowrap"><input data-k="cy" data-id="${c.id}" data-p="nom" list="apsaL" value="${esc(c.nom)}" style="flex:1;min-width:0" aria-label="APSA">${caSel(c.ca||'',`data-k="cy" data-id="${c.id}" data-p="ca"`)}</div></td>
   <td style="white-space:nowrap"><input type="date" data-k="cy" data-id="${c.id}" data-p="du" value="${c.du||''}" aria-label="Début"><br><input type="date" data-k="cy" data-id="${c.id}" data-p="au" value="${c.au||''}" aria-label="Fin"></td>
   <td>${K.cren.map(x=>`<label class="chk" style="margin:2px 0;font-size:.8rem"><input type="checkbox" data-k="cyc-cr" data-id="${c.id}" value="${x.id}" ${(c.cren||[]).includes(x.id)?'checked':''}> ${esc(crLab(x))}</label>`).join('')||'<span class="help">aucun</span>'}</td>
   <td><select data-k="cy" data-id="${c.id}" data-p="inst" aria-label="Installation">${optI(c.inst||'','installation des créneaux')}</select></td>
+  <td style="min-width:230px">${(c.evals||[]).map((v,i)=>{const ok=r.out.some(x=>x.date===v.date);return `<div class="evl"><select data-k="ev" data-id="${c.id}" data-i="${i}" data-p="type" aria-label="Type d'évaluation">${EVT.map(t=>`<option ${v.type===t?'selected':''}>${t}</option>`).join('')}</select><input type="date" data-k="ev" data-id="${c.id}" data-i="${i}" data-p="date" value="${v.date||''}" aria-label="Date">${v.date&&!ok?'<b class="wa" title="Pas de séance de la classe ce jour-là (hors créneaux, vacances ou hors cycle)">⚠</b>':''}<button class="btn s k" data-o="ev-rm" data-id="${c.id}" data-i="${i}" aria-label="Retirer">✕</button></div>`}).join('')}<button class="btn s r" data-o="ev-add" data-id="${c.id}">＋ Évaluation</button></td>
   <td class="n">${c.du&&c.au&&c.cren?.length?`<b class="ok">${r.out.length}</b> · ${fh(hh)}${r.skip.length?`<br><span class="help" title="${esc(r.skip.map(x=>frD(x.date)+' : '+x.r).join('\n'))}">${r.skip.length} retirée(s) ⓘ</span>`:''}`:'<span class="help">à compléter</span>'}</td>
-  <td><button class="btn s k" data-o="cy-rm" data-id="${c.id}">✕</button></td></tr>`}).join('')||'<tr><td colspan="6" class="help">Aucun cycle : ajoutez-en ou répartissez l\'année.</td></tr>'}</tbody></table></div>
+  <td><button class="btn s k" data-o="cy-rm" data-id="${c.id}">✕</button></td></tr>`}).join('')||'<tr><td colspan="7" class="help">Aucun cycle : ajoutez-en ou répartissez l\'année.</td></tr>'}</tbody></table></div>
  <div class="rw"><button class="btn s y" data-o="cy-add">＋ Cycle</button><span class="help">ou répartir l'année en</span><input type="number" id="nrep" min="1" max="12" value="${Math.max(3,cy.length)}" style="width:70px" aria-label="Nombre de cycles"><button class="btn s r" data-o="rep">cycles de même durée</button><span class="sp"></span><button class="btn s r" data-o="copy">📋 Copier vers d'autres classes…</button></div>
  <div class="chips">${Object.keys(CAS).map(k=>`<span style="${ch[k]?'':'opacity:.45'}">${caTag(k)} ${ch[k]?fh(ch[k]):'non programmé'}</span>`).join('')}${ch['']?`<span>sans CA : ${fh(ch[''])}</span>`:''}</div>
  ${(w=>w.length?`<p class="wa">⚠ ${esc(w.join(' · '))}</p>`:'<p class="ok">✓ Programmation complète pour cette classe.</p>')(controles(oc))}</div>`;
  const nivs=[...new Set(cls.map(c=>KL(c).niveau))];
  h+=`<div class="card pr"><h3>Planning annuel de l'équipe ${esc(annee())}</h3><div class="rw np"><select data-k="pc" aria-label="Couleurs"><option value="ca">Couleurs : champs d'apprentissage</option><option value="inst" ${U.pc==='inst'?'selected':''}>Couleurs : installations</option><option value="prof" ${U.pc==='prof'?'selected':''}>Couleurs : enseignants</option></select>
  <select data-k="pn" aria-label="Niveau"><option value="">Tous les niveaux</option>${nivs.map(n=>`<option ${U.pn===n?'selected':''}>${esc(n)}</option>`).join('')}</select><span class="sp"></span><button class="btn s r" data-o="print" data-p="plan">🖨 Imprimer</button></div>${gantt()}</div>`;
+ const EV=allEvals();
+ h+=`<div class="card pr"><h3>Calendrier des évaluations ${esc(annee())}</h3><div class="rw np"><span class="help">${EV.length} évaluation(s) datée(s) · fins de période : pointillés jaunes sur le planning</span><span class="sp"></span><button class="btn s r" data-o="print" data-p="eval">🖨 Imprimer</button></div>
+ ${EV.length?`<div class="tw" style="max-height:460px"><table class="t"><thead><tr><th>Date</th><th>Type</th><th>Classe</th><th>APSA</th><th>Enseignant</th><th>Créneau et installation</th></tr></thead><tbody>${EV.map(x=>x.per?`<tr><td colspan="6" style="background:rgba(255,214,10,.12)!important;color:var(--c1);font-weight:800">— ${esc(x.per)} —</td></tr>`:`<tr data-o="pcl" data-c="${esc(x.cl)}"><td><b>${esc(frD(x.date))}</b></td><td class="${isCCF(x.type)?'ko':''}"><b>${esc(x.type)}</b></td><td>${esc(x.cl)}</td><td>${caTag(x.c.ca)} ${esc(x.c.nom)}</td><td>${esc(pn(x.prof))}</td><td>${x.cr?esc(x.cr.hd+'–'+x.cr.hf)+(x.inst?' · '+esc(inN(x.inst)):''):'<span class="wa">pas de séance ce jour</span>'}</td></tr>`).join('')}</tbody></table></div>`:'<p class="help">Aucune date d\'évaluation : ajoutez-les dans la colonne « Évaluations » des cycles (fin de cycle, CCF, rattrapage…).</p>'}</div>`;
  const oc2=occupation(),rows=cls.map(cl=>{const c=caH(cl),w=controles(cl);return `<tr data-o="pcl" data-c="${esc(cl)}" class="${cl===oc?'on':''}"><td><b>${esc(cl)}</b><br><span class="help">${esc(KL(cl).niveau)} · ${esc(pin(KL(cl).prof))}</span></td>${Object.keys(CAS).map(k=>`<td class="n">${c[k]?fh(c[k]):'<span class="help">–</span>'}</td>`).join('')}<td class="n">${Object.values(c).filter(Boolean).length?Object.keys(CAS).filter(k=>c[k]).length:0}</td><td class="${w.length?'wa':'ok'}" style="font-size:.78rem">${w.length?esc(w.join(' · ')):'✓'}</td></tr>`}).join('');
  h+=`<div class="card pr"><h3>Contrôles de la programmation</h3><div class="tw" style="max-height:460px"><table class="t"><thead><tr><th>Classe</th>${Object.keys(CAS).map(k=>`<th class="n">${caTag(k)}</th>`).join('')}<th class="n">CA</th><th>Points à vérifier</th></tr></thead><tbody>${rows}</tbody></table></div>
  <p class="help">Heures de pratique programmées par champ d'apprentissage sur l'année (vacances, fériés et périodes interruptives déduits). Le CA5 ne concerne que le lycée.</p>
  <h3 style="margin-top:14px">Installations : séances en surnombre</h3>${oc2.length?`<ul style="margin:0;padding-left:20px">${oc2.slice(0,40).map(x=>`<li class="wa">${esc(frD(x.date))} · <b>${esc(inN(x.inst))}</b> (${x.cap} max.) : ${x.g.map(y=>`${esc(y.cl)} ${y.c.hd}–${y.c.hf} (${esc(y.cy.nom)})`).join(' · ')}</li>`).join('')}</ul>${oc2.length>40?`<p class="help">… et ${oc2.length-40} autre(s) date(s).</p>`:''}`:'<p class="ok">✓ Aucune installation en surnombre sur l\'année.</p>'}</div>`;
  $('#view').innerHTML=h;if(U.scr){const c=$('#crc');c&&c.scrollIntoView({block:'start'});U.scr=0}}
+function evDefault(cl,c){const L=cyS(cl,c).out;return L.length?L[L.length-1].date:(c.au||'')}
+function allEvals(){const o=O(),L=[];for(const cl of allCls()){const K=KL(cl);for(const c of K.cycles)for(const v of c.evals||[]){if(!v.date)continue;const x=cyS(cl,c).out.find(y=>y.date===v.date),cr=x?.c;
+  L.push({date:v.date,type:v.type,cl,c,cr,prof:cr?crP(cl,cr):K.prof,inst:cr?cyInst(cl,c,cr):c.inst})}}
+ L.sort((a,b)=>a.date.localeCompare(b.date)||a.cl.localeCompare(b.cl,'fr',{numeric:true}));
+ const md=new Set(allCls().map(c=>KL(c).eval==='S'?'S':'T')),P=[...(md.has('T')?o.per.T:[]),...(md.has('S')?o.per.S:[])].filter(p=>p.au).sort((a,b)=>a.au.localeCompare(b.au)),out=[];
+ let i=0;for(const x of L){while(i<P.length&&P[i].au<x.date){out.push({per:'Fin du '+P[i].nom.toLowerCase()+' ('+sh(P[i].au)+')'});i++}out.push(x)}
+ return L.length?out:[]}
 function colOf(cl,c){if(U.pc==='inst'){const i=c.inst||KL(cl).cren.find(x=>(c.cren||[]).includes(x.id))?.inst||'';return i?PAL[S.inst.findIndex(x=>x.id===i)%PAL.length]:'#9fb0a6'}if(U.pc==='prof')return pcol(KL(cl).prof);return CAC[c.ca||'']}
 function gantt(){const o=O(),D0=o.debut,D1=addD(o.fin,1),N=Math.max(1,dd(D0,D1)),X=d=>Math.max(0,Math.min(100,dd(D0,d)/N*100)).toFixed(3);
  const cls=allCls().filter(c=>!U.pn||KL(c).niveau===U.pn);if(!cls.length)return '<p class="help">Aucune classe.</p>';
@@ -394,18 +435,20 @@ function gantt(){const o=O(),D0=o.debut,D1=addD(o.fin,1),N=Math.max(1,dd(D0,D1))
  for(const cl of cls){const K=KL(cl);if(K.niveau!==cur){cur=K.niveau;h+=`<div class="gr"><div class="gn">${esc(cur)}</div></div>`}
   const cy=sortCy(K).filter(c=>c.du&&c.au),lanes=[];cy.forEach(c=>{let i=lanes.findIndex(e=>e<c.du);if(i<0){i=lanes.length;lanes.push('')}lanes[i]=c.au;c._l=i});
   const H=Math.max(1,lanes.length)*23+5;
-  h+=`<div class="gr"><div class="gl" data-o="pcl" data-c="${esc(cl)}">${esc(cl)}<small>${esc(pn(K.prof)||'—')}</small></div><div class="trk" style="height:${H}px">${bg}${cy.map(c=>`<div class="cb" data-o="pcl" data-c="${esc(cl)}" style="left:${X(c.du)}%;width:calc(${X(addD(c.au,1))-X(c.du)}% - 2px);top:${3+c._l*23}px;background:${colOf(cl,c)}" title="${esc(cl+' · '+c.nom+(c.ca?' ('+c.ca+')':'')+' · '+sh(c.du)+' → '+sh(c.au)+(c.inst?' · '+inN(c.inst):''))}">${esc(c.nom)}</div>`).join('')}</div></div>`}
+  const pl=(o.per[K.eval==='S'?'S':'T']||[]).slice(0,-1).filter(p=>p.au).map(p=>`<i class="pl" style="left:${X(addD(p.au,1))}%" title="Fin du ${esc(p.nom)}"></i>`).join('');
+  const ev=cy.flatMap(c=>(c.evals||[]).filter(v=>v.date).map(v=>`<i class="ev${isCCF(v.type)?' ccf':''}" style="left:${X(v.date)}%;top:${7+c._l*23}px" title="${esc(v.type+' · '+c.nom+' · '+frD(v.date))}"></i>`)).join('');
+  h+=`<div class="gr"><div class="gl" data-o="pcl" data-c="${esc(cl)}">${esc(cl)}<small>${esc(pn(K.prof)||'—')}</small></div><div class="trk" style="height:${H}px">${bg}${pl}${ev}${cy.map(c=>`<div class="cb" data-o="pcl" data-c="${esc(cl)}" style="left:${X(c.du)}%;width:calc(${X(addD(c.au,1))-X(c.du)}% - 2px);top:${3+c._l*23}px;background:${colOf(cl,c)}" title="${esc(cl+' · '+c.nom+(c.ca?' ('+c.ca+')':'')+' · '+sh(c.du)+' → '+sh(c.au)+(c.inst?' · '+inN(c.inst):''))}">${esc(c.nom)}</div>`).join('')}</div></div>`}
  h+='</div>';
  const lg=U.pc==='inst'?S.inst.map((i,n)=>[PAL[n%PAL.length],i.nom]):U.pc==='prof'?S.profs.map(p=>[p.couleur,pn(p.id)]):Object.keys(CAS).map(k=>[CAC[k],k+' · '+CAS[k].split(' ').slice(0,4).join(' ')+'…']);
- return h+`<div class="lgd">${lg.map(([c,t])=>`<span><span class="dot" style="background:${c}"></span>${esc(t)}</span>`).join('')}<span><span class="dot" style="background:rgba(255,255,255,.15)"></span>vacances</span></div>`}
+ return h+`<div class="lgd">${lg.map(([c,t])=>`<span><span class="dot" style="background:${c}"></span>${esc(t)}</span>`).join('')}<span><span class="dot" style="background:rgba(255,255,255,.15)"></span>vacances</span><span>◆ évaluation · <b class="ko">◆</b> CCF / épreuve</span><span style="color:var(--c1)">┊ fin de trimestre / semestre</span></div>`}
 function copyModal(src){const S0=KL(src),cls=allCls().filter(c=>c!==src);
- modal(`<h3>📋 Copier la programmation de ${esc(src)}</h3><p class="help">Les cycles (APSA, CA, dates, installation) sont recopiés. Les créneaux sont repris dans le même ordre (1er créneau → 1er créneau…). Les classes du même niveau sont cochées.</p>
+ modal(`<h3>📋 Copier la programmation de ${esc(src)}</h3><p class="help">Les cycles (APSA, CA, dates, installation, évaluations) sont recopiés. Les créneaux sont repris dans le même ordre (1er créneau → 1er créneau…). Les classes du même niveau sont cochées.</p>
  <form id="f"><div class="lst">${cls.map(c=>`<label class="chk"><input type="checkbox" name="cl" value="${esc(c)}" ${KL(c).niveau===S0.niveau?'checked':''}> <b>${esc(c)}</b> <span class="help">${esc(KL(c).niveau)} · ${KL(c).cycles.length} cycle(s) · ${KL(c).cren.length} créneau(x)</span></label>`).join('')||'<p class="help">Aucune autre classe.</p>'}</div>
  <label class="chk"><input type="checkbox" name="rep" checked> Remplacer les cycles existants des classes cochées</label>
  <div class="bar"><button class="btn">Copier</button><span class="sp"></span><button type="button" class="btn r" data-m="close">Annuler</button></div></form>`,m=>{
   m.querySelector('#f').onsubmit=e=>{e.preventDefault();const f=e.target,T=[...f.querySelectorAll('[name=cl]:checked')].map(x=>x.value),idx=id=>S0.cren.findIndex(x=>x.id===id);
    for(const t of T){const K=KL(t);if(f.rep.checked)K.cycles=[];
-    for(const c of S0.cycles){let cr=(c.cren||[]).map(id=>K.cren[idx(id)]?.id).filter(Boolean);if(!cr.length)cr=K.cren.map(x=>x.id);K.cycles.push({id:uid(),nom:c.nom,ca:c.ca,du:c.du,au:c.au,inst:c.inst||'',cren:cr})}}
+    for(const c of S0.cycles){let cr=(c.cren||[]).map(id=>K.cren[idx(id)]?.id).filter(Boolean);if(!cr.length)cr=K.cren.map(x=>x.id);K.cycles.push({id:uid(),nom:c.nom,ca:c.ca,du:c.du,au:c.au,inst:c.inst||'',cren:cr,evals:(c.evals||[]).map(v=>({...v}))})}}
    OM=`✅ Programmation copiée vers ${T.length} classe(s)`;save();close();render()}})}
 
 /* 5. Partage */
@@ -424,11 +467,11 @@ function renderShare(){const cls=allCls(),nb=cls.filter(c=>KL(c).cycles.length).
  <div class="bar"><button class="btn y" data-g="dl">⬇ Programmation de toute l'équipe (.json)</button></div>
  ${S.profs.length?`<label>Ou un fichier par enseignant (seulement ses classes)</label><div class="rw">${S.profs.map(p=>`<button class="btn s r" data-g="dlp" data-id="${p.id}"><span class="dot" style="background:${p.couleur}"></span>${esc(pn(p.id))} · ${profCls(p.id).length} classe(s)</button>`).join('')}</div>`:''}
  <p class="help">Envoyez le fichier par la messagerie de l'ENT, un mail ou une clé USB. Sur un appareil où CoordoEPS et SuiviProf EPS sont ouverts dans le même navigateur, l'import se fait aussi sans fichier.</p></div>`;
- h+=`<div class="card"><h3>2 · Dans SuiviProf EPS (chaque collègue)</h3><ol style="margin:0;padding-left:20px;line-height:1.7"><li>Ouvrir <b>SuiviProf EPS</b> → menu <b>📅 Organisation annuelle</b>.</li><li>Toucher <b>📥 Importer la programmation d'équipe</b> et choisir le fichier .json.</li><li>Choisir <b>son nom</b> : ses classes sont cochées.</li><li>Valider : calendrier, créneaux et cycles sont créés, les séances générées. Un nouvel import met à jour les cycles sans effacer les séances déjà saisies.</li></ol></div>`;
- h+=`<div class="card"><h3>3 · Tableaux et impression</h3><p class="help">Classeur .xlsx de synthèse : calendrier, équipe et services, installations, emplois du temps, programmation, heures par champ d'apprentissage.</p><div class="bar"><button class="btn r" data-g="xlsx">⬇ Tableau de synthèse (.xlsx)</button></div>
- <div class="bar"><button class="btn r s" data-nav="edt">🗓️ Grille à imprimer</button><button class="btn r s" data-nav="prog">📚 Planning à imprimer</button></div></div>`;
- h+=`<div class="card"><h3>4 · Mes Apps EPS</h3><p class="help">Ajoute à chaque élève (feuille « ${APP} » du classeur Mes Apps EPS) les cycles programmés pour sa classe : dates, APSA, CA, enseignant, installation. ${E.length} élève(s) dans la base locale.</p>
- <div class="bar"><button class="btn" data-g="sync">💾 Enregistrer dans Mes Apps EPS</button><button class="btn r" data-g="xmae">⬇ Feuille CoordoEPS (.xlsx)</button></div><div class="bar"><button class="btn r s" data-g="list">📂 Charger la liste des élèves</button></div><p class="msg" id="sm"></p></div>`;
+ h+=`<div class="card"><h3>2 · Dans SuiviProf EPS (chaque collègue)</h3><ol style="margin:0;padding-left:20px;line-height:1.7"><li>Ouvrir <b>SuiviProf EPS</b> → menu <b>📅 Organisation annuelle</b>.</li><li>Toucher <b>📥 Importer la programmation d'équipe</b> et choisir le fichier .json.</li><li>Choisir <b>son nom</b> : ses classes sont cochées. Si un nom prévu diffère du nom Pronote de la rentrée, choisir la classe correspondante dans la liste.</li><li>Valider : calendrier, créneaux, cycles et dates d'évaluation sont créés, les séances générées. Un nouvel import met à jour les cycles sans effacer les séances déjà saisies.</li></ol></div>`;
+ h+=`<div class="card"><h3>3 · Tableaux et impression</h3><p class="help">Classeur .xlsx de synthèse : programmation, évaluations, emplois du temps, équipe et services, installations, heures par champ d'apprentissage, calendrier.</p><div class="bar"><button class="btn r" data-g="xlsx">⬇ Tableau de synthèse (.xlsx)</button></div>
+ <div class="bar"><button class="btn r s" data-nav="edt">🗓️ Grille à imprimer</button><button class="btn r s" data-nav="prog">📚 Planning et évaluations à imprimer</button></div></div>`;
+ h+=`<div class="card"><h3>4 · Mes Apps EPS</h3><p class="help">À la rentrée seulement, une fois la liste Pronote chargée : ajoute à chaque élève (feuille « ${APP} » du classeur Mes Apps EPS) les cycles programmés pour sa classe : dates, APSA, CA, enseignant, installation. ${E.length} élève(s) dans la base locale.</p>
+ <div class="bar"><button class="btn" data-g="sync">💾 Enregistrer dans Mes Apps EPS</button><button class="btn r" data-g="xmae">⬇ Feuille CoordoEPS (.xlsx)</button></div><p class="msg" id="sm"></p></div>`;
  h+=`<div class="card"><h3>5 · Sauvegarde</h3><p class="help">Le travail est conservé sur cet appareil. Le fichier de l'équipe sert aussi de sauvegarde : le restaurer sur un autre appareil ou le confier au prochain coordonnateur.</p>
  <div class="bar"><button class="btn r" data-g="dl">⬇ Sauvegarder</button><button class="btn r" data-g="rest">⬆ Restaurer un fichier CoordoEPS</button></div><div class="bar"><button class="btn r s" data-g="demo">🧪 Exemple</button><button class="btn k s" data-g="reset">Tout effacer</button></div></div></div>`;
  $('#view').innerHTML=h}
@@ -460,12 +503,13 @@ function synthese(){const o=O(),cls=allCls(),Kc=Object.keys(CAS);
  const eq=[['Enseignant','Statut','Classes','EPS h/sem.','AS (h)','Total','ORS','Écart'],...S.profs.map(p=>{const s=service(p.id),t=s.h+(+p.as||0);return[pn(p.id),STAT[p.statut]?.[0]||'',s.cls.join(', '),r2(s.h),+p.as||0,r2(t),+p.ors||0,r2(t-(+p.ors||0))]})];
  const ins=[['Installation','Type','Capacité (classes)','Remarque'],...S.inst.map(i=>[i.nom,i.type,+i.cap||1,i.rem||''])];
  const edt=[['Classe','Niveau','Effectif','Jour','Début','Fin','Semaines','Enseignant','Installation'],...CR().map(x=>[x.cl,KL(x.cl).niveau,eff(x.cl)||'',JL[x.c.jour],x.c.hd,x.c.hf,x.c.sem==='AB'?'A et B':x.c.sem,pn(x.prof),inN(x.inst)])];
- const prog=[['Classe','Niveau','Enseignant','APSA','CA','Du','Au','Créneaux','Installation','Séances','Heures'],...cls.flatMap(cl=>sortCy(KL(cl)).map(c=>{const r=cyS(cl,c);return[cl,KL(cl).niveau,pn(KL(cl).prof),c.nom,c.ca||'',c.du||'',c.au||'',KL(cl).cren.filter(x=>(c.cren||[]).includes(x.id)).map(crLab).join(' / '),inN(c.inst)||[...new Set(KL(cl).cren.filter(x=>(c.cren||[]).includes(x.id)).map(x=>inN(x.inst)).filter(Boolean))].join(' / '),r.out.length,r2(r.out.reduce((n,x)=>n+dur(x.c),0))]}))];
+ const evs=[['Date','Type','Classe','Niveau','APSA','CA','Enseignant','Horaire','Installation'],...allEvals().filter(x=>!x.per).map(x=>[x.date,x.type,x.cl,KL(x.cl).niveau,x.c.nom,x.c.ca||'',pn(x.prof),x.cr?x.cr.hd+'–'+x.cr.hf:'pas de séance ce jour',inN(x.inst)])];
+ const prog=[['Classe','Niveau','Enseignant','APSA','CA','Du','Au','Créneaux','Installation','Séances','Heures','Évaluations'],...cls.flatMap(cl=>sortCy(KL(cl)).map(c=>{const r=cyS(cl,c);return[cl,KL(cl).niveau,pn(KL(cl).prof),c.nom,c.ca||'',c.du||'',c.au||'',KL(cl).cren.filter(x=>(c.cren||[]).includes(x.id)).map(crLab).join(' / '),inN(c.inst)||[...new Set(KL(cl).cren.filter(x=>(c.cren||[]).includes(x.id)).map(x=>inN(x.inst)).filter(Boolean))].join(' / '),r.out.length,r2(r.out.reduce((n,x)=>n+dur(x.c),0)),(c.evals||[]).filter(v=>v.date).map(v=>v.type+' '+v.date).join(' / ')]}))];
  const ca=[['Classe','Niveau',...Kc.map(k=>k+' (h)'),'Points à vérifier'],...cls.map(cl=>{const c=caH(cl);return[cl,KL(cl).niveau,...Kc.map(k=>c[k]?r2(c[k]):0),controles(cl).join(' · ')]})];
- return xlsx([{name:'Programmation',rows:prog},{name:'Emplois du temps',rows:edt},{name:'Équipe et services',rows:eq},{name:'Installations',rows:ins},{name:'Heures par CA',rows:ca},{name:'Calendrier',rows:cal.slice(0,1).concat(cal.slice(1).sort((a,b)=>String(a[2]).localeCompare(String(b[2]))))}])}
+ return xlsx([{name:'Programmation',rows:prog},{name:'Évaluations',rows:evs},{name:'Emplois du temps',rows:edt},{name:'Équipe et services',rows:eq},{name:'Installations',rows:ins},{name:'Heures par CA',rows:ca},{name:'Calendrier',rows:cal.slice(0,1).concat(cal.slice(1).sort((a,b)=>String(a[2]).localeCompare(String(b[2]))))}])}
 
 /* Mes Apps EPS : une ligne par cycle pour chaque élève de la classe */
-function lignes(cl){const K=KL(cl);return sortCy(K).filter(c=>c.du&&c.au).map(c=>{const cr=K.cren.filter(x=>(c.cren||[]).includes(x.id));return{Date:c.du,Fin:c.au,Cycle:c.nom,CA:c.ca||'',Enseignant:pn([...new Set(cr.map(x=>crP(cl,x)))][0]||K.prof),Installation:inN(c.inst)||[...new Set(cr.map(x=>inN(x.inst)).filter(Boolean))].join(' / '),'Créneaux':cr.map(crLab).join(' / '),'Séances':cyS(cl,c).out.length}})}
+function lignes(cl){const K=S.classes[cl];if(!K)return[];return sortCy(K).filter(c=>c.du&&c.au).map(c=>{const cr=K.cren.filter(x=>(c.cren||[]).includes(x.id));return{Date:c.du,Fin:c.au,Cycle:c.nom,CA:c.ca||'',Enseignant:pn([...new Set(cr.map(x=>crP(cl,x)))][0]||K.prof),Installation:inN(c.inst)||[...new Set(cr.map(x=>inN(x.inst)).filter(Boolean))].join(' / '),'Créneaux':cr.map(crLab).join(' / '),'Séances':cyS(cl,c).out.length,'Évaluations':(c.evals||[]).filter(v=>v.date).map(v=>v.type+' '+v.date).join(' / ')}})}
 async function sync(){const m=$('#sm');try{E=await EPS.all();if(!E.length)throw new Error('aucune liste d\'élèves sur cet appareil');let n=0,k=0;
  for(const e of E){const l=lignes(e.classe);const had=e.ext&&e.ext[APP];if(!l.length&&!had)continue;await EPS.setExt(APP,e.id,{lignes:l});n++;k+=l.length}
  m.style.color='var(--ok)';m.textContent=`✅ ${n} élève(s) mis à jour (${k} ligne(s))`}catch(x){m.style.color='var(--ko)';m.textContent='❌ '+x.message}}
@@ -477,7 +521,7 @@ function demo(){if((S.profs.length||Object.values(S.classes).some(k=>k.cycles.le
  const i=(nom,type,cap)=>({id:uid(),nom,type,cap,rem:''}),I=[i('Gymnase municipal','Gymnase',2),i('Salle de danse','Salle spécialisée',1),i('Stade','Piste / stade',2),i('Piscine intercommunale','Piscine',1)];
  S={v:1,etab:'Lycée de démonstration',auteur:'C. MARTIN',org:null,profs:P,inst:I,classes:{}};O();
  const C=(cl,niv,pr,cr,prog)=>{const K=S.classes[cl]={niveau:niv,prof:P[pr].id,eval:'T',cren:cr.map(([j,hd,hf,sem,ins])=>({id:uid(),jour:j,hd,hf,sem:sem||'AB',inst:I[ins].id,prof:''})),cycles:[]};
-  repartir(prog.length,cl);sortCy(K).forEach((c,n)=>{const[nom,ins]=prog[n];c.nom=nom;c.ca=caOf(nom);c.inst=ins==null?'':I[ins].id})};
+  repartir(prog.length,cl);sortCy(K).forEach((c,n)=>{const[nom,ins]=prog[n];c.nom=nom;c.ca=caOf(nom);c.inst=ins==null?'':I[ins].id;const d=evDefault(cl,c);c.evals=d?[{type:/^T/.test(cl)?'CCF':'Fin de cycle',date:d}]:[]})};
  C('2NDE 1','2nde',0,[[1,'08:00','10:00','AB',0]],[['Natation',3],['Badminton'],['Acrosport',1],['Course d\'orientation',2]]);
  C('2NDE 2','2nde',1,[[1,'08:00','10:00','AB',0]],[['Athlétisme',2],['Volley-ball'],['Natation',3],['Danse chorégraphiée',1]]);
  C('2NDE 3','2nde',2,[[2,'10:00','12:00','AB',0]],[['Badminton'],['Natation',3],['Course d\'orientation',2],['Acrosport',1]]);
@@ -508,17 +552,18 @@ $('#view').addEventListener('change',e=>{const t=e.target,k=t.dataset.k;if(!k)re
  else if(k==='cr'){const c=K.cren[+t.dataset.i],f=t.dataset.p;c[f]=f==='jour'?+val:val;if(f==='hd'&&c.hf<c.hd)c.hf=c.hd}
  else if(k==='eval')K.eval=val;
  else if(k==='cy'){const c=K.cycles.find(x=>x.id===t.dataset.id),f=t.dataset.p;c[f]=f==='nom'?val.trim()||c.nom:val;if(f==='nom'&&val in APSA)c.ca=caOf(val);if(f==='du'&&c.au&&c.au<val)c.au=val}
+ else if(k==='ev'){const c=K.cycles.find(x=>x.id===t.dataset.id);c.evals[+t.dataset.i][t.dataset.p]=val}
  else if(k==='cyc-cr'){const c=K.cycles.find(x=>x.id===t.dataset.id);c.cren=(c.cren||[]).filter(x=>x!==val);if(t.checked)c.cren.push(val)}
  else if(k==='ef'||k==='ew'||k==='pc'||k==='pn'){U[k]=val;return render()}
  save();render()});
 $('#view').addEventListener('click',async e=>{const b=e.target.closest('[data-o]');if(!b)return;const a=b.dataset.o,o=O(),oc=selCl(),K=oc?KL(oc):null;
  if(a==='cl'||a==='pcl'){U.cl=b.dataset.c;U.scr=1;if(a==='pcl'&&U.view!=='prog')U.view='prog';return render()}
  if(a==='blk')return crModal(b.dataset.c,b.dataset.id);
- if(a==='print'){document.body.dataset.pr=b.dataset.p;b.closest('.card').classList.add('pr');setTimeout(()=>{print();delete document.body.dataset.pr},50);return}
+ if(a==='print'){const c=b.closest('.card');document.body.dataset.pr=b.dataset.p;c.classList.add('prx');setTimeout(()=>{print();delete document.body.dataset.pr;c.classList.remove('prx')},50);return}
  if(/-rm$/.test(a)&&!b.dataset.ok){b.dataset.ok=1;b.textContent='Supprimer ?';return}
  if(a==='vac-add')o.vac.push({nom:'Vacances',du:o.debut,au:o.debut});
  else if(a==='vac-rm')o.vac.splice(+b.dataset.i,1);
- else if(a==='vac-def'){o.vac=vacDef(o.zone);OM='✅ Calendrier officiel 2026-2027, zone '+o.zone}
+ else if(a==='vac-def'){if(annee()!=='2026-2027'){OM='⚠ Le calendrier intégré ne couvre que 2026-2027 : utilisez la mise à jour en ligne ou saisissez les dates';return render()}o.vac=vacDef(o.zone);OM='✅ Calendrier officiel 2026-2027, zone '+o.zone}
  else if(a==='vac-net'){$('#om').textContent='Chargement…';try{o.vac=await vacNet();OM='✅ Vacances mises à jour depuis le calendrier officiel en ligne'}catch(x){$('#om').textContent='❌ Serveur injoignable ('+(x.message||x)+') : calendrier actuel conservé';return}}
  else if(a==='int-rm')o.inter.splice(+b.dataset.i,1);
  else if(a==='flip'){const m=b.dataset.m,i=o.flip.indexOf(m);if(i<0)o.flip.push(m);else o.flip.splice(i,1)}
@@ -527,6 +572,11 @@ $('#view').addEventListener('click',async e=>{const b=e.target.closest('[data-o]
  else if(a==='in-add')S.inst.push({id:uid(),nom:'',type:'Gymnase',cap:1,rem:''});
  else if(a==='in-rm'){const id=b.dataset.id;S.inst=S.inst.filter(i=>i.id!==id);Object.values(S.classes).forEach(k=>{k.cren.forEach(c=>{if(c.inst===id)c.inst=''});k.cycles.forEach(c=>{if(c.inst===id)c.inst=''})})}
  else if(a==='cl-rm'){delete S.classes[b.dataset.c];OM='Classe retirée'}
+ else if(a==='cl-mae'){const L=maeCls();L.forEach(c=>KL(c));OM=`✅ ${L.length} classe(s) ajoutée(s) depuis la liste Mes Apps EPS`}
+ else if(a==='gen-cl'){const f=b.closest('form'),pre=f.pre.value||'',n=Math.min(30,+f.nb.value||0);if(!pre.trim()||!n){f.pre.focus();return}f.noms.value=[f.noms.value.trim(),...[...Array(n)].map((_,i)=>pre+(i+1))].filter(Boolean).join(', ');return}
+ else if(a==='ev-add'){const c=K.cycles.find(x=>x.id===b.dataset.id);(c.evals=c.evals||[]).push({type:(c.evals.length?'CCF rattrapage':'Fin de cycle'),date:evDefault(oc,c)})}
+ else if(a==='ev-rm'){const c=K.cycles.find(x=>x.id===b.dataset.id);c.evals.splice(+b.dataset.i,1)}
+ else if(a==='next')return nextModal();
  else if(a==='cr-add'){const l=K.cren[K.cren.length-1],c={id:uid(),jour:l?l.jour:1,hd:l?l.hd:'08:00',hf:l?l.hf:'10:00',sem:'AB',inst:l?l.inst:'',prof:''};K.cren.push(c);K.cycles.forEach(y=>{if(!y.cren||y.cren.length===K.cren.length-1)(y.cren=y.cren||[]).push(c.id)})}
  else if(a==='cr-rm'){const id=K.cren[+b.dataset.i].id;K.cren.splice(+b.dataset.i,1);K.cycles.forEach(c=>c.cren=(c.cren||[]).filter(x=>x!==id))}
  else if(a==='cy-add'){const l=sortCy(K).filter(c=>c.au).pop(),du=l?addD(l.au,1):'';K.cycles.push({id:uid(),nom:'Nouveau cycle',ca:'',du,au:'',inst:'',cren:K.cren.map(x=>x.id)})}
@@ -537,7 +587,8 @@ $('#view').addEventListener('click',async e=>{const b=e.target.closest('[data-o]
  save();render()});
 $('#view').addEventListener('submit',e=>{const f=e.target;e.preventDefault();
  if(f.id==='fint'){O().inter.push({id:uid(),nom:f.nom.value.trim(),du:f.du.value,au:f.au.value<f.du.value?f.du.value:f.au.value,classes:[...f.querySelectorAll('[name=cl]:checked')].map(x=>x.value)});OM='✅ Période ajoutée'}
- else if(f.id==='fcl'){const n=f.nom.value.trim();if(!n)return;KL(n);U.cl=n;OM='✅ Classe '+n+' ajoutée : réglez son niveau, son enseignant et ses créneaux'}
+ else if(f.id==='fcl'){const L=[...new Set(f.noms.value.split(/[,;\n]+/).map(x=>x.trim().replace(/\s+/g,' ')).filter(Boolean))],nv=f.niv.value;if(!L.length)return;
+  let n=0;for(const c of L){if(S.classes[c])continue;KL(c);if(nv)S.classes[c].niveau=nv;n++}U.cl=L[0];OM=`✅ ${n} classe(s) ajoutée(s)${n<L.length?' ('+(L.length-n)+' déjà présente(s))':''} : réglez niveau, enseignant et créneaux`}
  save();render()});
 document.addEventListener('click',async e=>{const n=e.target.closest('[data-nav]');if(n){U.view=n.dataset.nav;render();scrollTo(0,0);return}
  const g=e.target.closest('[data-g]');if(!g)return;const k=g.dataset.g;

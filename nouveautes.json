@@ -1,5 +1,17 @@
 [
  {
+  "v": "1.1.0",
+  "date": "2026-11-24",
+  "titre": "Programmer l'année suivante, sans les listes d'élèves",
+  "items": [
+   "La programmation se prépare sans élèves : les classes sont celles que vous saisissez, la liste Pronote du portail n'est plus mélangée à la programmation.",
+   "Emplois du temps : saisie de plusieurs classes ou groupes d'un coup (séparés par des virgules ou un par ligne), génération « 2NDE 1, 2NDE 2… », niveau deviné et modifiable ; reprise facultative des classes de la liste Mes Apps EPS.",
+   "Programmation : dates d'évaluation par cycle (fin de cycle, CCF, CCF de rattrapage, diagnostique, intermédiaire, épreuve ponctuelle), avec alerte si aucune séance n'a lieu ce jour-là.",
+   "Planning annuel : évaluations (◆, CCF en rouge) et fins de trimestre ou de semestre ; nouveau calendrier des évaluations, imprimable, et feuille « Évaluations » dans le tableau de synthèse.",
+   "Année : « Préparer l'année suivante » décale période, cycles et évaluations d'un an (mêmes jours de la semaine), charge les vacances officielles si elles sont publiées et peut retirer les enseignants pour une nouvelle répartition."
+  ]
+ },
+ {
   "v": "1.0.0",
   "date": "2026-11-24",
   "titre": "Bienvenue dans CoordoEPS",
