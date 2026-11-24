@@ -1,0 +1,2 @@
+{"name":"CoordoEPS","short_name":"CoordoEPS","start_url":"./","scope":"./","display":"standalone","background_color":"#06231a","theme_color":"#06281a","lang":"fr",
+"icons":[{"src":"icons/icon-192.png","sizes":"192x192","type":"image/png","purpose":"any"},{"src":"icons/icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}]}

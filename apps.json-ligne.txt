@@ -1,0 +1,1 @@
+ {"id":"coordoeps","nom":"CoordoEPS","desc":"Coordonnateur EPS : calendrier, emplois du temps, installations et programmation annuelle de l'équipe, à partager dans SuiviProf EPS","url":"https://vinztoc.github.io/CoordoEPS/","icon":"icons/icon-192-CoordoEPS.png","emoji":"🗂️","couleur":"#ffd60a,#1f9d3a","categorie":"Gestion","auteur":"Vincent TOCQUIN"},

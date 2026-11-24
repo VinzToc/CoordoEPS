@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CoordoEPS</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<meta name="theme-color" content="#06281a">
+<style>
+/* VOICE  : le bureau du coordonnateur EPS : organiser l'année de toute l'équipe, puis la transmettre
+   IDEA   : le grand planning mural de la salle des profs d'EPS (classes × semaines, couleurs par champ d'apprentissage)
+   COLOUR / TYPE : logo CoordoEPS (vert profond, jaune), system-ui
+   LAYOUT : menu bas à 5 entrées (Année, Équipe, Emplois du temps, Programmation, Partage) */
+:root{--bg:#06231a;--tx:#eefaf1;--mut:rgba(238,250,241,.62);--glass:rgba(255,255,255,.07);--bd:rgba(255,255,255,.15);--c1:#ffd60a;--c2:#3ccf5a;--c3:#fff1a0;--ok:#7ff09a;--ko:#ff8f8f;--wa:#ffb347;--cell:#0a2e22;--cell2:#0d3527;--head:#082a1e}
+*{box-sizing:border-box;min-width:0;-webkit-tap-highlight-color:transparent}[hidden]{display:none!important}
+body{margin:0;font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--tx);background:var(--bg);min-height:100vh;overflow-x:clip}
+body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(ellipse at 8% 4%,rgba(255,214,10,.13),transparent 55%),radial-gradient(ellipse at 94% 96%,rgba(60,207,90,.18),transparent 55%)}
+header{position:relative;display:flex;align-items:center;gap:14px;padding:16px 16px 14px;flex-wrap:wrap}
+header::after{content:'';position:absolute;left:14px;right:14px;bottom:0;height:3px;border-radius:3px;background:linear-gradient(90deg,transparent,#1f9d3a 15%,#ffd60a 50%,#3ccf5a 85%,transparent)}
+header img.lg{width:64px;height:64px;border-radius:22%;box-shadow:0 0 0 2px rgba(255,255,255,.28),0 0 24px rgba(255,214,10,.35),0 6px 16px rgba(0,0,0,.45);transition:transform .3s}
+header img.lg:hover{transform:rotate(-5deg) scale(1.05)}
+header h1{margin:0;font-style:italic;font-weight:900;line-height:1.05;font-size:1.9rem;color:#fff;text-shadow:0 2px 0 #02180f,0 4px 14px rgba(0,0,0,.5);white-space:nowrap}
+header h1 .tm{background:linear-gradient(180deg,#fff59a,#ffd60a 55%,#f0b400);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;text-shadow:none;filter:drop-shadow(0 2px 0 #02180f)}
+header .ttl p{margin:4px 0 0;font-size:.7rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(226,255,236,.65)}
+.sp{flex:1}
+main{padding:0 14px 100px}
+.btn{border:0;border-radius:12px;padding:9px 14px;font:inherit;font-weight:800;font-size:.86rem;color:#fff;cursor:pointer;background:linear-gradient(135deg,#1f9d3a,#3ccf5a);box-shadow:0 4px 14px #1f9d3a40;min-height:40px;white-space:nowrap}
+.btn.y{background:linear-gradient(135deg,#ffd60a,#f0a500);color:#1d1700;box-shadow:0 4px 14px #f0a50040}
+.btn.r{background:rgba(255,255,255,.08);border:1.5px solid var(--bd);box-shadow:none}
+.btn.k{background:linear-gradient(135deg,#ff6b6b,#c21e1e)}
+.btn.s{padding:4px 9px;min-height:30px;font-size:.78rem;border-radius:9px}
+.btn:active{transform:scale(.97)}.btn:disabled{opacity:.4}
+select,input,textarea{padding:9px 11px;border-radius:11px;border:1.5px solid var(--bd);font:inherit;font-size:16px;background:rgba(0,0,0,.32);color:var(--tx)}
+input[type=color]{padding:2px;width:42px;height:36px}
+select:focus,input:focus,textarea:focus,button:focus-visible{outline:2px solid var(--c1);outline-offset:1px}
+label{display:block;font-weight:700;font-size:.8rem;color:var(--mut);margin:10px 0 4px}
+label input,label select,label textarea{display:block;width:100%;margin-top:4px}
+.msg{font-size:.82rem;font-weight:700;min-height:1.2em}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}
+.bar h2{margin:0;font-size:1.05rem;font-weight:900}
+.card{background:var(--glass);border:1px solid var(--bd);border-radius:16px;padding:14px;margin:12px 0}
+.card h3{margin:0 0 8px;font-size:.85rem;letter-spacing:.08em;text-transform:uppercase;color:var(--c1)}
+.og{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr));gap:12px}.og .card{margin:0}.full{grid-column:1/-1}
+.rw{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:5px 0}.rw input,.rw select{padding:6px 8px;font-size:15px}.rw input[type=text]{flex:1;min-width:110px}
+.rw label{margin:0}
+.help{color:var(--mut);font-size:.78rem;margin:4px 0}
+.chk{display:flex;gap:8px;align-items:center;color:var(--tx);font-weight:600;margin:6px 0}
+.chk input{width:20px;height:20px;margin:0}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.chips span{background:rgba(255,255,255,.08);border-radius:20px;padding:3px 10px;font-size:.8rem;font-weight:700}
+.code{display:inline-block;border-radius:6px;padding:0 6px;font-weight:900;font-size:.75rem;color:#06231a}
+.ok{color:var(--ok)}.ko{color:var(--ko)}.wa{color:var(--wa)}
+.empty{border:2px dashed var(--bd);border-radius:18px;padding:28px;text-align:center;color:var(--mut);margin:14px 0}
+.empty b{color:var(--tx);display:block;font-size:1.05rem;margin-bottom:6px}
+/* tableaux */
+.tw{overflow:auto;border:1px solid var(--bd);border-radius:14px;background:var(--cell)}
+table.t{border-collapse:separate;border-spacing:0;font-size:.85rem;width:100%}
+.t th,.t td{border-bottom:1px solid rgba(255,255,255,.07);padding:5px 7px;text-align:left;vertical-align:top}
+.t thead th{background:var(--head);position:sticky;top:0;z-index:2;font-size:.76rem;color:var(--mut)}
+.t tbody tr:nth-child(even) td{background:var(--cell2)}
+.t td.n,.t th.n{text-align:right;white-space:nowrap}
+.t tr.on td{background:rgba(255,214,10,.12)!important}
+.t select,.t input{padding:5px 7px;font-size:14px}
+tr[data-o]{cursor:pointer}
+.ocl{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px}
+.ocl button{border:1.5px solid var(--bd);border-radius:20px;padding:6px 14px;background:rgba(255,255,255,.05);color:var(--tx);font:inherit;font-weight:800;cursor:pointer;min-height:38px}
+.ocl button small{color:var(--mut);font-weight:600;margin-left:4px}
+.ocl button.on{border-color:transparent;background:linear-gradient(135deg,#1f9d3a,#3ccf5a);color:#fff}.ocl button.on small{color:#e9ffe9}
+.dot{display:inline-block;width:11px;height:11px;border-radius:50%;vertical-align:middle;margin-right:4px;border:1px solid #0006}
+/* semaines A/B */
+.wks{display:grid;grid-template-columns:repeat(auto-fill,minmax(86px,1fr));gap:5px}
+.wks button{border:1px solid var(--bd);border-radius:9px;padding:5px 7px;background:rgba(255,255,255,.05);color:var(--tx);font:inherit;font-size:.75rem;cursor:pointer;text-align:left;min-height:44px}
+.wks button b{float:right;font-size:.95rem}.wks .A b{color:var(--c1)}.wks .B b{color:var(--c2)}.wks .fl{border-color:var(--c3)}.wks .vac{opacity:.35;cursor:default}.wks small{color:var(--mut)}
+/* grille hebdomadaire */
+.wg{display:grid;grid-template-columns:46px repeat(var(--nd),minmax(120px,1fr));border:1px solid var(--bd);border-radius:14px;overflow:auto;background:var(--cell)}
+.wg .dh{position:sticky;top:0;background:var(--head);text-align:center;font-weight:900;padding:6px;border-left:1px solid var(--bd);z-index:3}
+.wg .hc{position:relative;height:var(--h);margin:8px 0}.wg .hc span{position:absolute;right:4px;font-size:.68rem;color:var(--mut);transform:translateY(-50%)}
+.wg .dc{position:relative;height:var(--h);margin:8px 0;border-left:1px solid var(--bd)}
+.wg .hl{position:absolute;left:0;right:0;border-top:1px dashed rgba(255,255,255,.08)}
+.blk{position:absolute;border-radius:8px;padding:3px 5px;font-size:.72rem;line-height:1.2;overflow:hidden;color:#06231a;cursor:pointer;border:1px solid #0006;font-weight:700;box-shadow:0 2px 6px #0005}
+.blk b{display:block;font-size:.8rem;font-weight:900}.blk i{font-style:normal;opacity:.8}
+.blk.ab{background-image:repeating-linear-gradient(135deg,transparent 0 6px,rgba(255,255,255,.28) 6px 12px)}
+.blk.cf{outline:3px solid #ff3b3b;outline-offset:-1px}
+/* planning annuel */
+.gt{border:1px solid var(--bd);border-radius:14px;background:var(--cell);overflow:auto}
+.gt .gr{display:grid;grid-template-columns:130px 1fr;min-width:900px;border-bottom:1px solid rgba(255,255,255,.06)}
+.gt .gl{padding:4px 8px;font-size:.8rem;font-weight:800;position:sticky;left:0;background:var(--cell);z-index:2;border-right:1px solid var(--bd);cursor:pointer}
+.gt .gl small{display:block;color:var(--mut);font-weight:600;font-size:.68rem}
+.gt .gn{grid-column:1/-1;padding:4px 8px;font-size:.72rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--c1);background:var(--head)}
+.trk{position:relative}
+.vb{position:absolute;top:0;bottom:0;background:repeating-linear-gradient(135deg,rgba(255,255,255,.05) 0 4px,rgba(255,255,255,.1) 4px 8px)}
+.mt{position:absolute;top:0;bottom:0;border-left:1px solid rgba(255,255,255,.12);font-size:.66rem;color:var(--mut);padding-left:3px;white-space:nowrap}
+.td{position:absolute;top:0;bottom:0;border-left:2px solid var(--ko);z-index:1}
+.cb{position:absolute;height:20px;border-radius:6px;font-size:.68rem;padding:2px 5px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:#06231a;font-weight:800;border:1px solid #0006;cursor:pointer}
+.lgd{display:flex;flex-wrap:wrap;gap:10px;font-size:.78rem;margin:8px 0}
+/* fenêtres */
+.ov{position:fixed;inset:0;background:#000a;display:flex;align-items:flex-start;justify-content:center;z-index:50;padding:4vh 10px;overflow:auto}
+.mo{background:#0b3022;border:1px solid var(--bd);border-radius:18px;padding:18px;width:min(580px,100%);box-shadow:0 20px 60px #000c}
+.mo h3{margin:0 0 6px;font-size:1.05rem;color:var(--c1)}
+.lst{max-height:280px;overflow:auto;border:1px solid var(--bd);border-radius:10px;padding:4px 10px}
+/* menu bas */
+.bnav{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;justify-content:center;gap:6px;padding:6px 10px calc(6px + env(safe-area-inset-bottom));background:rgba(3,24,16,.94);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid var(--bd);box-shadow:0 -6px 20px #0008}
+.bnav button{flex:1;max-width:180px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:0;border-radius:14px;padding:6px 4px;background:none;color:var(--mut);font:inherit;font-size:.72rem;font-weight:800;cursor:pointer;min-height:54px;line-height:1.1;text-align:center}
+.bnav button b{font-size:1.3rem;line-height:1}
+.bnav button.on{color:#fff;background:linear-gradient(135deg,rgba(31,157,58,.7),rgba(255,214,10,.45))}
+.bnav button:not(.on):hover{color:var(--tx);background:rgba(255,255,255,.06)}
+@media(max-width:600px){header{padding:10px}header img.lg{width:48px;height:48px}header h1{font-size:1.4rem}header .ttl p{display:none}.hide-s{display:none}.bnav button{font-size:.62rem}}
+/* impression */
+@media print{
+ body{background:#fff;color:#000;font-size:11px}body::before,.bnav,header .btn,.np,.ov{display:none!important}
+ body[data-pr] .card:not(.pr){display:none}body[data-pr] .bar{display:none}
+ .card{border:1px solid #999;background:#fff;break-inside:avoid}.card h3{color:#000}
+ .wg,.gt,.tw{background:#fff;overflow:visible;border-color:#999}.wg .dh,.gt .gl,.gt .gn,.t thead th{background:#eee;color:#000}.gt .gl{position:static}
+ .t td{background:#fff!important;color:#000}.help,.mt,.gt .gl small{color:#444}.gt .gr{min-width:0}
+ *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+<header>
+ <img src="icons/logo-CoordoEPS.png" alt="" class="lg"><div class="ttl"><h1>Coordo<span class="tm">EPS</span></h1><p>Programmation annuelle de l'équipe · Mes Apps EPS</p></div>
+ <span class="sp"></span>
+ <span class="msg" id="st"></span>
+ <button class="btn r" data-g="share" title="Partager la programmation avec l'équipe">📤 <span class="hide-s">Partager</span></button>
+</header>
+<main><section id="view"></section></main>
+<nav class="bnav" id="bnav" aria-label="Menu de l'application">
+ <button data-nav="cal"><b>📅</b>Année</button>
+ <button data-nav="equipe"><b>👥</b>Équipe et installations</button>
+ <button data-nav="edt"><b>🗓️</b>Emplois du temps</button>
+ <button data-nav="prog"><b>📚</b>Programmation</button>
+ <button data-nav="share"><b>📤</b>Partage</button>
+</nav>
+<datalist id="apsaL"></datalist>
+<div class="ov" id="ov" hidden><div class="mo" id="mo"></div></div>
+<input type="file" id="fList" accept=".csv,.xlsx" hidden>
+<input type="file" id="fJson" accept=".json" hidden>
+<script src="eps-core.js"></script>
+<script src="nouveautes.js"></script>
+<script>
+{
+const APP='coordoeps',LS='CoordoEPS_v1',FMT='CoordoEPS',VER='1.0.0';
+const $=s=>document.querySelector(s),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>Math.random().toString(36).slice(2,9);
+const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const today=()=>iso(new Date());
+const frD=s=>{if(!s)return'';const d=new Date(s+'T12:00');return d.toLocaleDateString('fr-FR',{weekday:'short',day:'2-digit',month:'2-digit'})};
+const sh=s=>frD(s).replace(/^\S+ /,'');
+const addD=(s,n)=>{const d=new Date(s+'T12:00');d.setDate(d.getDate()+n);return iso(d)};
+const dd=(a,b)=>Math.round((new Date(b+'T12:00')-new Date(a+'T12:00'))/864e5);
+const dow=s=>new Date(s+'T12:00').getDay();
+const monday=s=>addD(s,-((dow(s)+6)%7));
+const JOURS=['dim.','lun.','mar.','mer.','jeu.','ven.','sam.'],JL=['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+const tm=s=>{const[h,m]=String(s||'0:0').split(':');return(+h||0)*60+(+m||0)};
+const fh=x=>(Math.round(x*100)/100).toString().replace('.',',')+' h';
+
+/* Champs d'apprentissage et APSA : mêmes listes que SuiviProf EPS (les cycles s'importent tels quels) */
+const CAS={CA1:'Réaliser une performance motrice maximale mesurable à une échéance donnée',CA2:'Adapter ses déplacements à des environnements variés',CA3:'Réaliser une prestation corporelle destinée à être vue et appréciée',CA4:'Conduire et maîtriser un affrontement collectif ou interindividuel',CA5:'Réaliser et orienter son activité physique pour développer ses ressources et s\'entretenir'};
+const CAC={CA1:'#ff9f43',CA2:'#3ccf5a',CA3:'#d68bff',CA4:'#4fb3ff',CA5:'#ffd60a','':'#9fb0a6'};
+const APSA={"Activités libres":"","Multi-activités":"","Athlétisme":"CA1","Acrosport":"CA3","Aérobic":"CA3","Arts du cirque":"CA3","Aquathlon":"CA1","Aviron":"CA1","Badminton":"CA4","Baseball":"CA4","Basket-ball":"CA4","Basket 3x3":"CA4","Beach-volley":"CA4","Biathlon":"CA1","BMX":"CA2","Boxe française (Savate)":"CA4","Canoë-kayak":"CA2","Course d'orientation":"CA2","Cyclisme sur route":"CA1","Danse chorégraphiée":"CA3","Danse hip-hop":"CA3","Double dutch":"CA3","Duathlon":"CA1","Équitation":"CA2","Escalade":"CA2","Fitness / Step":"CA5","Football":"CA4","Futsal":"CA4","Gymnastique artistique":"CA3","Gymnastique rythmique":"CA3","Handball":"CA4","Handball à 4":"CA4","Handisport":"","Hockey sur gazon":"CA4","Judo":"CA4","Karaté":"CA4","Kitesurf":"CA2","Laser run":"CA1","Musculation":"CA5","Natation":"CA1","Padel":"CA4","Pétanque":"","Planche à voile":"CA2","Raid multisports":"CA2","Rugby à VII":"CA4","Run & Bike":"CA1","Sauvetage aquatique":"CA2","Skateboard / Surfskate":"CA2","Ski alpin":"CA2","Sport partagé":"","Squash":"CA4","Surf":"CA2","Tennis":"CA4","Tennis de table":"CA4","Triathlon":"CA1","Ultimate frisbee":"CA4","Volley-ball":"CA4","Voile légère":"CA2","VTT":"CA2"};
+const caOf=n=>APSA[n]??'';
+const caSel=(v,attrs)=>`<select ${attrs} aria-label="Champ d'apprentissage"><option value="">CA ?</option>${Object.keys(CAS).map(k=>`<option value="${k}" title="${esc(CAS[k])}" ${v===k?'selected':''}>${k}</option>`).join('')}</select>`;
+const caTag=k=>k?`<span class="code" style="background:${CAC[k]}" title="${esc(CAS[k])}">${k}</span>`:'';
+const NIV=['6e','5e','4e','3e','2nde','1re','Tle','2nde Pro','1re Pro','Tle Pro','CAP 1','CAP 2','Autre'];
+function guessNiv(cl){const s=String(cl).toUpperCase().replace(/\s+/g,'');
+ if(/CAP/.test(s))return/^(1|CAP1)/.test(s)||/CAP.?1/.test(s)?'CAP 1':'CAP 2';const pro=/PRO|BAC|MRC|MELEC|MSPC|ASSP|GA|AGORA|MCV/.test(s);
+ if(/^6/.test(s))return'6e';if(/^5/.test(s))return'5e';if(/^4/.test(s))return'4e';if(/^3/.test(s))return'3e';
+ if(/^(2|SECONDE|SEC)/.test(s))return pro?'2nde Pro':'2nde';if(/^(1|PREM)/.test(s))return pro?'1re Pro':'1re';if(/^(T|TERM)/.test(s))return pro?'Tle Pro':'Tle';return'Autre'}
+const STAT={cert:['Certifié(e)',20],agr:['Agrégé(e)',17],contr:['Contractuel(le)',20],tzr:['TZR',20],stag:['Stagiaire',10],autre:['Autre',18]};
+const ITYPES=['Gymnase','Salle spécialisée','Plateau extérieur','Piste / stade','Piscine','Mur d\'escalade','Site naturel','Autre'];
+const PAL=['#4fb3ff','#ff9f43','#d68bff','#ff6b8b','#5fe0e0','#ffd60a','#a0e85f','#ff7f50','#9aa7ff','#f7a8ff','#7ff09a','#e0c080'];
+
+/* ───── État (le fichier de partage reprend S tel quel, sans l'état d'affichage U) ───── */
+let S={v:1,etab:'',auteur:'',org:null,profs:[],inst:[],classes:{}},U={view:'cal',cl:'',ef:'all',ew:'',pc:'ca',pn:''},E=[],FER=null,WK=null,OM='';
+try{const j=JSON.parse(localStorage.getItem(LS));if(j&&j.classes)S=j}catch(e){}
+try{Object.assign(U,JSON.parse(localStorage.getItem(LS+'_ui'))||{})}catch(e){}
+function save(){FER=WK=null;S.maj=new Date().toISOString();try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}saveU()}
+function saveU(){try{localStorage.setItem(LS+'_ui',JSON.stringify(U))}catch(e){}}
+const KL=cl=>S.classes[cl]||(S.classes[cl]={niveau:guessNiv(cl),prof:'',eval:'T',cren:[],cycles:[]});
+const eff=cl=>E.filter(e=>e.classe===cl).length;
+const nivOf=cl=>(S.classes[cl]||{}).niveau||guessNiv(cl);
+const allCls=()=>[...new Set([...E.map(e=>e.classe).filter(Boolean),...Object.keys(S.classes)])].sort((a,b)=>{const x=NIV.indexOf(nivOf(a)),y=NIV.indexOf(nivOf(b));return x-y||a.localeCompare(b,'fr',{numeric:true})});
+const selCl=()=>{const L=allCls();if(!L.includes(U.cl))U.cl=L[0]||'';return U.cl};
+
+/* ───── Calendrier : identique à SuiviProf EPS (année, vacances, fériés, semaines A/B, interruptions) ───── */
+function paques(y){const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),x=h+l-7*m+114;return iso(new Date(y,Math.floor(x/31)-1,x%31+1))}
+function feries(y,als,pent){const p=paques(y),L=[[y+'-01-01',"Jour de l'an"],[addD(p,1),'Lundi de Pâques'],[y+'-05-01','Fête du Travail'],[y+'-05-08','Victoire 1945'],[addD(p,39),'Ascension'],...(pent?[]:[[addD(p,50),'Lundi de Pentecôte']]),[y+'-07-14','Fête nationale'],[y+'-08-15','Assomption'],[y+'-11-01','Toussaint'],[y+'-11-11','Armistice 1918'],[y+'-12-25','Noël']];
+ if(als)L.push([addD(p,-2),'Vendredi saint'],[y+'-12-26','Saint-Étienne']);return L}
+const CAL2627={commun:[['Vacances de la Toussaint','2026-10-17','2026-11-01'],['Vacances de Noël','2026-12-19','2027-01-03'],["Pont de l'Ascension",'2027-05-06','2027-05-09'],["Vacances d'été",'2027-07-03','2027-08-31']],
+ A:[["Vacances d'hiver",'2027-02-13','2027-02-28'],['Vacances de printemps','2027-04-10','2027-04-25']],
+ B:[["Vacances d'hiver",'2027-02-20','2027-03-07'],['Vacances de printemps','2027-04-17','2027-05-02']],
+ C:[["Vacances d'hiver",'2027-02-06','2027-02-21'],['Vacances de printemps','2027-04-03','2027-04-18']]};
+const vacDef=z=>[...CAL2627.commun,...(CAL2627[z]||[])].map(([nom,du,au])=>({nom,du,au})).sort((a,b)=>a.du.localeCompare(b.du));
+function O(){if(!S.org)S.org={zone:'A',debut:'2026-09-01',fin:'2027-07-03',vac:vacDef('A'),als:false,pent:false,ab:'A',flip:[],inter:[],
+  per:{T:[{nom:'Trimestre 1',du:'2026-09-01',au:'2026-11-28'},{nom:'Trimestre 2',du:'2026-11-30',au:'2027-03-06'},{nom:'Trimestre 3',du:'2027-03-08',au:'2027-07-03'}],
+       S:[{nom:'Semestre 1',du:'2026-09-01',au:'2027-01-23'},{nom:'Semestre 2',du:'2027-01-25',au:'2027-07-03'}]}};return S.org}
+const annee=()=>{const y=+O().debut.slice(0,4);return y+'-'+(y+1)};
+function ferMap(){if(FER)return FER;const o=O();FER=new Map();for(let y=+o.debut.slice(0,4);y<=+o.fin.slice(0,4);y++)feries(y,o.als,o.pent).forEach(([d,n])=>FER.set(d,n));return FER}
+const isVac=d=>O().vac.some(x=>x.du<=d&&d<=x.au);
+function off(d,cl){const o=O();if(d<o.debut||d>o.fin)return'hors année scolaire';const v=o.vac.find(x=>x.du<=d&&d<=x.au);if(v)return v.nom;
+ const f=ferMap().get(d);if(f)return f+' (férié)';const it=o.inter.find(x=>x.du<=d&&d<=x.au&&(!x.classes.length||x.classes.includes(cl)));return it?it.nom:''}
+function weeks(){if(WK)return WK;const o=O();WK=new Map();let n=0;
+ for(let m=monday(o.debut);m<=o.fin;m=addD(m,7)){const school=[0,1,2,3,4].some(i=>{const d=addD(m,i);return d>=o.debut&&d<=o.fin&&!isVac(d)});
+  let L=(n%2===0)===(o.ab==='A')?'A':'B';if(o.flip.filter(f=>f<=m).length%2)L=L==='A'?'B':'A';WK.set(m,{L:school?L:'',school});if(school)n++}
+ return WK}
+const wk=d=>(weeks().get(monday(d))||{}).L||'';
+function slots(cl,du,au,ids){const cr=KL(cl).cren.filter(c=>!ids||ids.includes(c.id)),out=[],skip=[];if(!du||!au||!cr.length)return{out,skip};
+ for(let d=du;d<=au;d=addD(d,1)){const w=dow(d);for(const c of cr){if(+c.jour!==w)continue;if(c.sem!=='AB'&&wk(d)!==c.sem)continue;const r=off(d,cl);if(r)skip.push({date:d,c,r});else out.push({date:d,c})}}
+ return{out,skip}}
+async function vacNet(){const o=O(),y=+o.debut.slice(0,4),z=o.zone==='Corse'?'Corse':'Zone '+o.zone;
+ const r=await fetch('https://data.education.gouv.fr/api/explore/v2.1/catalog/datasets/fr-en-calendrier-scolaire/records?limit=100&where='+encodeURIComponent(`annee_scolaire="${y}-${y+1}" and zones="${z}"`));
+ if(!r.ok)throw new Error('HTTP '+r.status);const j=await r.json(),m=new Map();
+ for(const x of j.results||[]){if(/enseignant/i.test(x.population||''))continue;const du=iso(new Date(x.start_date)),au=addD(iso(new Date(x.end_date)),-1);if(du>o.fin||au<o.debut)continue;const k=x.description+du;if(!m.has(k))m.set(k,{nom:x.description,du,au})}
+ const L=[...m.values()].sort((a,b)=>a.du.localeCompare(b.du));if(!L.length)throw new Error('aucune donnée pour cette zone');return L}
+
+/* ───── Équipe, installations, créneaux ───── */
+const PR=id=>S.profs.find(p=>p.id===id);
+const pn=id=>{const p=PR(id);return p?(p.nom+(p.prenom?' '+p.prenom:'')).trim():''};
+const pin=id=>{const p=PR(id);return p?((p.prenom||'')[0]||'')+((p.nom||'')[0]||''):''};
+const pcol=id=>PR(id)?.couleur||'#9fb0a6';
+const IN=id=>S.inst.find(i=>i.id===id);const inN=id=>IN(id)?.nom||'';
+const crP=(cl,c)=>c.prof||KL(cl).prof||'';
+const crLab=c=>`${JOURS[c.jour]} ${c.hd}–${c.hf}${c.sem==='AB'?'':' · sem. '+c.sem}`;
+const dur=c=>Math.max(0,tm(c.hf)-tm(c.hd))/60,wgt=c=>c.sem==='AB'?1:.5;
+const CR=()=>allCls().flatMap(cl=>KL(cl).cren.map(c=>({cl,c,prof:crP(cl,c),inst:c.inst||''})));
+const ovl=(a,b)=>+a.jour===+b.jour&&tm(a.hd)<tm(b.hf)&&tm(b.hd)<tm(a.hf)&&(a.sem==='AB'||b.sem==='AB'||a.sem===b.sem);
+const teaches=(pid,cl)=>KL(cl).prof===pid||KL(cl).cren.some(c=>c.prof===pid);
+function service(pid){let h=0;const cls=new Set();for(const x of CR())if(x.prof===pid){h+=dur(x.c)*wgt(x.c);cls.add(x.cl)}return{h,cls:[...cls]}}
+/* Conflits hebdomadaires : un enseignant sur deux créneaux en même temps, une installation au-delà de sa capacité */
+function conflits(){const L=CR(),P=[],I=[],ids=new Set(),seen=new Set();
+ for(let i=0;i<L.length;i++)for(let j=i+1;j<L.length;j++){const a=L[i],b=L[j];if(!ovl(a.c,b.c))continue;
+  if(a.prof&&a.prof===b.prof){P.push({a,b});ids.add(a.c.id);ids.add(b.c.id)}}
+ for(const a of L){if(!a.inst)continue;const g=L.filter(b=>b.inst===a.inst&&ovl(a.c,b.c)),cap=+(IN(a.inst)?.cap||1);
+  if(g.length>cap){g.forEach(x=>ids.add(x.c.id));const k=a.inst+'|'+g.map(x=>x.c.id).sort().join();if(!seen.has(k)){seen.add(k);I.push({inst:a.inst,g,cap})}}}
+ return{P,I,ids}}
+
+/* ───── Cycles ───── */
+const cyS=(cl,c)=>slots(cl,c.du,c.au,c.cren||[]);
+const cyH=(cl,c)=>cyS(cl,c).out.reduce((n,x)=>n+dur(x.c),0);
+const sortCy=K=>[...K.cycles].sort((a,b)=>(a.du||'9').localeCompare(b.du||'9'));
+const cyInst=(cl,c,cr)=>c.inst||cr?.inst||'';
+function caH(cl){const o={};for(const c of KL(cl).cycles){if(!c.du||!c.au)continue;const k=c.ca||'';o[k]=(o[k]||0)+cyH(cl,c)}return o}
+function controles(cl){const K=KL(cl),o=O(),w=[];if(!K.cren.length){w.push('aucun créneau');return w}
+ if(!K.prof&&K.cren.some(c=>!c.prof))w.push('enseignant non désigné');
+ const cy=K.cycles;cy.filter(c=>!c.du||!c.au).forEach(c=>w.push(`« ${c.nom} » sans dates`));cy.filter(c=>c.du&&!c.ca).forEach(c=>w.push(`« ${c.nom} » sans CA`));
+ const all=slots(cl,o.debut,o.fin,null).out,cov=x=>cy.filter(c=>c.du&&c.au&&c.du<=x.date&&x.date<=c.au&&(c.cren||[]).includes(x.c.id)).length;
+ let nc=0,dbl=0;for(const x of all){const n=cov(x);if(!n)nc++;else if(n>1)dbl++}
+ if(nc)w.push(`${nc} séance(s) hors cycle`);if(dbl)w.push(`${dbl} séance(s) partagées par 2 cycles`);return w}
+/* Occupation des installations date par date (installation du cycle, sinon celle du créneau) */
+function occupation(){const M=new Map();
+ for(const cl of allCls())for(const cy of KL(cl).cycles)for(const x of cyS(cl,cy).out){const i=cyInst(cl,cy,x.c);if(!i)continue;const k=i+'|'+x.date;if(!M.has(k))M.set(k,[]);M.get(k).push({cl,cy,c:x.c})}
+ const out=[];for(const[k,L]of M){const[i,date]=k.split('|'),cap=+(IN(i)?.cap||1);if(L.length<=cap)continue;
+  const g=L.filter(a=>L.filter(b=>tm(a.c.hd)<tm(b.c.hf)&&tm(b.c.hd)<tm(a.c.hf)).length>cap);if(g.length)out.push({inst:i,date,g,cap})}
+ return out.sort((a,b)=>a.date.localeCompare(b.date))}
+function repartir(n,cl){const K=KL(cl);if(!K.cren.length){OM="⚠ Ajoutez d'abord les créneaux de la classe (Emplois du temps)";return}
+ const o=O(),dates=[...new Set(slots(cl,o.debut,o.fin,null).out.map(x=>x.date))];if(dates.length<n){OM='⚠ Pas assez de séances dans l\'année';return}
+ const per=dates.length/n,cy=sortCy(K);
+ for(let i=0;i<n;i++){let c=cy[i];if(!c){c={id:uid(),nom:'Cycle '+(i+1),ca:'',inst:''};K.cycles.push(c)}
+  c.du=dates[Math.round(i*per)];c.au=dates[Math.round((i+1)*per)-1];c.cren=K.cren.map(x=>x.id)}
+ OM=`✅ ${n} cycles d'environ ${Math.round(per)} jours de cours : choisissez les APSA et ajustez les dates`}
+
+/* ───── Rendu ───── */
+const VIEWS={cal:renderCal,equipe:renderEquipe,edt:renderEdt,prog:renderProg,share:renderShare};
+function render(){if(!VIEWS[U.view])U.view='cal';document.querySelectorAll('#bnav [data-nav]').forEach(b=>b.classList.toggle('on',b.dataset.nav===U.view));VIEWS[U.view]();saveU()}
+const head=(t,sub)=>{const m=OM;OM='';return `<div class="bar"><h2>${t}</h2><span class="msg" id="om">${esc(m)}</span></div>${sub?`<p class="help" style="margin-top:-4px">${sub}</p>`:''}`};
+const optP=(v,vide='— enseignant —')=>`<option value="">${vide}</option>`+S.profs.map(p=>`<option value="${p.id}" ${v===p.id?'selected':''}>${esc(pn(p.id))}</option>`).join('');
+const optI=(v,vide='— installation —')=>`<option value="">${vide}</option>`+S.inst.map(i=>`<option value="${i.id}" ${v===i.id?'selected':''}>${esc(i.nom)}</option>`).join('');
+const clChips=(oc,o='cl')=>`<div class="ocl np">${allCls().map(c=>`<button data-o="${o}" data-c="${esc(c)}" class="${c===oc?'on':''}">${esc(c)}<small>${esc(KL(c).niveau)}</small></button>`).join('')}</div>`;
+function noClass(){return `<div class="empty"><b>Aucune classe pour le moment</b>Les classes viennent de la liste Pronote partagée par Mes Apps EPS. Vous pouvez aussi ajouter des classes à la main (onglet Emplois du temps) ou essayer avec un exemple.<div class="bar" style="justify-content:center;margin-top:14px"><button class="btn y" data-g="list">📂 Charger la liste des élèves</button><button class="btn r" data-nav="edt">＋ Ajouter des classes</button><button class="btn r" data-g="demo">🧪 Essayer avec un exemple</button></div></div>`}
+
+/* 1. Année */
+function renderCal(){const o=O(),cls=allCls();
+ const fer=[...ferMap()].filter(([d])=>d>=o.debut&&d<=o.fin&&dow(d)%6).sort((a,b)=>a[0].localeCompare(b[0]));
+ let h=head('📅 Année scolaire '+annee(),"Calendrier commun à toute l'équipe. Il est transmis avec la programmation : chaque collègue retrouve les mêmes vacances, fériés, semaines A/B et périodes dans SuiviProf EPS.")+'<div class="og">';
+ h+=`<div class="card full"><h3>Établissement</h3><div class="rw"><label style="flex:2">Nom de l'établissement<input data-k="etab" value="${esc(S.etab)}" placeholder="ex : Lycée Jean Moulin"></label><label style="flex:1">Coordonnateur EPS<input data-k="auteur" value="${esc(S.auteur)}" placeholder="Nom du coordonnateur"></label></div>
+ ${S.profs.length||S.inst.length?'':'<div class="bar"><button class="btn r s" data-g="demo">🧪 Remplir avec un exemple complet</button><span class="help">pour découvrir l\'application</span></div>'}</div>`;
+ h+=`<div class="card"><h3>Année scolaire et vacances</h3><div class="rw"><label style="flex:1">Rentrée<input type="date" data-k="debut" value="${o.debut}"></label><label style="flex:1">Fin des cours<input type="date" data-k="fin" value="${o.fin}"></label><label>Zone<select data-k="zone">${['A','B','C','Corse'].map(z=>`<option ${o.zone===z?'selected':''}>${z}</option>`).join('')}</select></label></div>
+ <label class="chk"><input type="checkbox" data-k="als" ${o.als?'checked':''}> Alsace-Moselle (Vendredi saint et 26 décembre fériés)</label>
+ <label class="chk"><input type="checkbox" data-k="pent" ${o.pent?'checked':''}> Lundi de Pentecôte travaillé (journée de solidarité)</label>
+ <div class="rw"><button class="btn s r" data-o="vac-def">Calendrier officiel 2026-2027 intégré</button><button class="btn s r" data-o="vac-net">🌐 Mettre à jour depuis data.education.gouv.fr</button></div>
+ ${o.vac.map((x,i)=>`<div class="rw"><input type="text" data-k="vac" data-i="${i}" data-p="nom" value="${esc(x.nom)}" aria-label="Nom"><input type="date" data-k="vac" data-i="${i}" data-p="du" value="${x.du}" aria-label="Premier jour"><input type="date" data-k="vac" data-i="${i}" data-p="au" value="${x.au}" aria-label="Dernier jour"><button class="btn s k" data-o="vac-rm" data-i="${i}">✕</button></div>`).join('')}
+ <div class="rw"><button class="btn s r" data-o="vac-add">＋ Période de vacances</button></div><p class="help">Dates : premier jour sans cours → veille de la reprise.</p>
+ <label>Jours fériés en semaine (calculés automatiquement)</label><div class="chips">${fer.map(([d,n])=>`<span>${esc(frD(d))} · ${esc(n)}</span>`).join('')}</div></div>`;
+ h+=`<div class="card"><h3>Périodes interruptives</h3>${o.inter.map((x,i)=>`<div class="rw"><span style="flex:1"><b>${esc(x.nom)}</b> · ${esc(frD(x.du))} → ${esc(frD(x.au))}<br><span class="help">${x.classes.length?esc(x.classes.join(', ')):'toutes les classes'}</span></span><button class="btn s k" data-o="int-rm" data-i="${i}">✕</button></div>`).join('')||'<p class="help">Aucune : stages en entreprise, examens, voyages, installation indisponible…</p>'}
+ <form id="fint" style="border-top:1px solid var(--bd);margin-top:8px;padding-top:6px"><div class="rw"><input type="text" name="nom" required placeholder="ex : Stage en entreprise" aria-label="Nom"><input type="date" name="du" required aria-label="Du"><input type="date" name="au" required aria-label="Au"></div>
+ <label>Classes concernées (aucune cochée = toutes)</label><div class="rw">${cls.map(c=>`<label class="chk" style="margin:0 10px 0 0"><input type="checkbox" name="cl" value="${esc(c)}"> ${esc(c)}</label>`).join('')||'<span class="help">aucune classe</span>'}</div><button class="btn s">＋ Ajouter la période</button></form>
+ <h3 style="margin-top:16px">Périodes d'évaluation</h3>${['T','S'].map(t=>`<label>${t==='T'?'Trimestres':'Semestres'}</label>`+o.per[t].map((p,i)=>`<div class="rw"><span style="width:96px">${esc(p.nom)}</span><input type="date" data-k="per" data-pt="${t}" data-i="${i}" data-p="du" value="${p.du}" aria-label="Début"> → <input type="date" data-k="per" data-pt="${t}" data-i="${i}" data-p="au" value="${p.au}" aria-label="Fin"></div>`).join('')).join('')}</div>`;
+ h+=`<div class="card full"><h3>Semaines A / B</h3><div class="rw"><span class="help">Semaine de la rentrée :</span><select data-k="ab" aria-label="Semaine de la rentrée"><option ${o.ab==='A'?'selected':''}>A</option><option ${o.ab==='B'?'selected':''}>B</option></select><span class="help">L'alternance saute les semaines de vacances. Touchez une semaine pour inverser l'alternance à partir de celle-ci.</span></div>
+ <div class="wks">${[...weeks()].map(([m,w])=>w.school?`<button class="${w.L}${o.flip.includes(m)?' fl':''}" data-o="flip" data-m="${m}">${esc(sh(m))}<b>${w.L}</b>${o.flip.includes(m)?'<br><small>↺ bascule</small>':''}</button>`:`<button class="vac" disabled>${esc(sh(m))}<br><small>vacances</small></button>`).join('')}</div></div></div>`;
+ $('#view').innerHTML=h}
+
+/* 2. Équipe et installations */
+function renderEquipe(){let h=head('👥 Équipe et installations',"Les enseignants de l'équipe EPS, leurs obligations de service, et les installations sportives avec le nombre de classes qu'elles accueillent en même temps.")+'<div class="og">';
+ h+=`<div class="card full"><h3>Enseignants</h3>${S.profs.length?`<div class="tw"><table class="t"><thead><tr><th>Couleur</th><th>Nom</th><th>Prénom</th><th>Statut</th><th class="n">ORS (h)</th><th class="n">dont AS (h)</th><th></th></tr></thead><tbody>
+ ${S.profs.map(p=>`<tr><td><input type="color" data-k="pf" data-id="${p.id}" data-p="couleur" value="${p.couleur}" aria-label="Couleur"></td><td><input data-k="pf" data-id="${p.id}" data-p="nom" value="${esc(p.nom)}" aria-label="Nom"></td><td><input data-k="pf" data-id="${p.id}" data-p="prenom" value="${esc(p.prenom||'')}" aria-label="Prénom"></td>
+ <td><select data-k="pf" data-id="${p.id}" data-p="statut">${Object.entries(STAT).map(([k,v])=>`<option value="${k}" ${p.statut===k?'selected':''}>${v[0]}</option>`).join('')}</select></td>
+ <td class="n"><input type="number" min="0" max="40" step=".5" style="width:76px" data-k="pf" data-id="${p.id}" data-p="ors" value="${p.ors}"></td><td class="n"><input type="number" min="0" max="10" step=".5" style="width:76px" data-k="pf" data-id="${p.id}" data-p="as" value="${p.as}"></td>
+ <td><button class="btn s k" data-o="pf-rm" data-id="${p.id}">✕</button></td></tr>`).join('')}</tbody></table></div>`:'<p class="help">Aucun enseignant : ajoutez les membres de l\'équipe.</p>'}
+ <div class="rw"><button class="btn s y" data-o="pf-add">＋ Enseignant</button><span class="help">ORS : obligation réglementaire de service, forfait AS compris (certifié 20 h dont 3 h d'AS, agrégé 17 h dont 3 h d'AS).</span></div></div>`;
+ h+=`<div class="card full"><h3>Installations sportives</h3>${S.inst.length?`<div class="tw"><table class="t"><thead><tr><th>Nom</th><th>Type</th><th class="n">Classes en même temps</th><th>Remarque</th><th></th></tr></thead><tbody>
+ ${S.inst.map(i=>`<tr><td><input data-k="in" data-id="${i.id}" data-p="nom" value="${esc(i.nom)}" aria-label="Nom"></td><td><select data-k="in" data-id="${i.id}" data-p="type">${ITYPES.map(t=>`<option ${i.type===t?'selected':''}>${esc(t)}</option>`).join('')}</select></td>
+ <td class="n"><input type="number" min="1" max="12" style="width:70px" data-k="in" data-id="${i.id}" data-p="cap" value="${i.cap}"></td><td><input data-k="in" data-id="${i.id}" data-p="rem" value="${esc(i.rem||'')}" placeholder="ex : transport 10 min" aria-label="Remarque"></td>
+ <td><button class="btn s k" data-o="in-rm" data-id="${i.id}">✕</button></td></tr>`).join('')}</tbody></table></div>`:'<p class="help">Aucune installation : gymnase, salle de danse, piste, piscine, mur d\'escalade…</p>'}
+ <div class="rw"><button class="btn s y" data-o="in-add">＋ Installation</button></div></div>`;
+ const rows=S.profs.map(p=>{const s=service(p.id),tot=s.h+(+p.as||0),d=tot-(+p.ors||0);
+  return `<tr><td><span class="dot" style="background:${p.couleur}"></span><b>${esc(pn(p.id))}</b></td><td>${esc(s.cls.join(', '))||'<span class="help">aucune</span>'}</td><td class="n">${fh(s.h)}</td><td class="n">${fh(+p.as||0)}</td><td class="n"><b>${fh(tot)}</b></td><td class="n">${fh(+p.ors||0)}</td>
+  <td class="n ${d>0?'wa':d<0?'ko':'ok'}">${d>0?'+'+fh(d)+' (HSA)':d<0?fh(d)+' à attribuer':'✓ complet'}</td></tr>`}).join('');
+ h+=`<div class="card full pr"><h3>Services de l'équipe</h3>${S.profs.length?`<div class="tw"><table class="t"><thead><tr><th>Enseignant</th><th>Classes</th><th class="n">EPS / sem.</th><th class="n">AS</th><th class="n">Total</th><th class="n">ORS</th><th class="n">Écart</th></tr></thead><tbody>${rows}</tbody></table></div>
+ <p class="help">Heures hebdomadaires moyennes calculées à partir des créneaux (un créneau en semaine A ou B compte pour moitié). Les créneaux se règlent dans Emplois du temps.</p>`:'<p class="help">Ajoutez d\'abord les enseignants.</p>'}</div></div>`;
+ $('#view').innerHTML=h}
+
+/* 3. Emplois du temps */
+function renderEdt(){const cls=allCls(),oc=selCl(),K=oc?KL(oc):null,cf=conflits();
+ let h=head('🗓️ Emplois du temps',"Pour chaque classe : niveau, enseignant et créneaux d'EPS (jour, horaires, semaines A/B, installation habituelle). La grille et les conflits se mettent à jour à chaque modification.")+'<div class="og">';
+ const tr=cls.map(cl=>{const k=KL(cl),n=eff(cl),hh=k.cren.reduce((s,c)=>s+dur(c)*wgt(c),0);
+  return `<tr class="${cl===oc?'on':''}"><td data-o="cl" data-c="${esc(cl)}" style="cursor:pointer"><b>${esc(cl)}</b><br><span class="help">${n?n+' élève(s)':'ajoutée à la main'}</span></td>
+  <td><select data-k="kniv" data-c="${esc(cl)}" aria-label="Niveau">${NIV.map(v=>`<option ${k.niveau===v?'selected':''}>${v}</option>`).join('')}</select></td>
+  <td><select data-k="kprof" data-c="${esc(cl)}" aria-label="Enseignant">${optP(k.prof)}</select></td>
+  <td data-o="cl" data-c="${esc(cl)}" style="cursor:pointer">${k.cren.map(c=>`${esc(crLab(c))}${c.inst?' · '+esc(inN(c.inst)):''}${c.prof&&c.prof!==k.prof?' · <i>'+esc(pn(c.prof))+'</i>':''}${cf.ids.has(c.id)?' <b class="ko">⚠</b>':''}`).join('<br>')||'<span class="help">aucun créneau</span>'}</td>
+  <td class="n">${fh(hh)}</td><td>${!n?`<button class="btn s k" data-o="cl-rm" data-c="${esc(cl)}">✕</button>`:''}</td></tr>`}).join('');
+ h+=`<div class="card full"><h3>Classes</h3>${cls.length?`<div class="tw" style="max-height:420px"><table class="t"><thead><tr><th>Classe</th><th>Niveau</th><th>Enseignant</th><th>Créneaux</th><th class="n">h / sem.</th><th></th></tr></thead><tbody>${tr}</tbody></table></div>`:noClass()}
+ <form id="fcl" class="rw" style="margin-top:8px"><input type="text" name="nom" required placeholder="Nom de la classe ou du groupe (ex : 2NDE 4, Groupe Natation)" aria-label="Nouvelle classe"><button class="btn s r">＋ Ajouter une classe</button></form></div>`;
+ if(oc){const k=K;h+=`<div class="card full" id="crc"><h3>Créneaux de la classe ${esc(oc)}</h3>${clChips(oc)}
+ ${k.cren.map((c,i)=>`<div class="rw"><select data-k="cr" data-i="${i}" data-p="jour" aria-label="Jour">${[1,2,3,4,5,6].map(j=>`<option value="${j}" ${+c.jour===j?'selected':''}>${JOURS[j]}</option>`).join('')}</select><input type="time" data-k="cr" data-i="${i}" data-p="hd" value="${c.hd}" aria-label="Début"> → <input type="time" data-k="cr" data-i="${i}" data-p="hf" value="${c.hf}" aria-label="Fin">
+ <select data-k="cr" data-i="${i}" data-p="sem" aria-label="Semaines"><option value="AB">toutes les semaines</option><option value="A" ${c.sem==='A'?'selected':''}>semaines A</option><option value="B" ${c.sem==='B'?'selected':''}>semaines B</option></select>
+ <select data-k="cr" data-i="${i}" data-p="inst" aria-label="Installation">${optI(c.inst||'')}</select><select data-k="cr" data-i="${i}" data-p="prof" aria-label="Enseignant du créneau">${optP(c.prof||'','enseignant de la classe')}</select>
+ ${cf.ids.has(c.id)?'<b class="ko" title="Conflit : voir plus bas">⚠</b>':''}<button class="btn s k" data-o="cr-rm" data-i="${i}">✕</button></div>`).join('')||'<p class="help">Aucun créneau pour le moment.</p>'}
+ <div class="rw"><button class="btn s y" data-o="cr-add">＋ Créneau</button><span class="sp"></span><label class="chk" style="margin:0">Évaluation :</label><label class="chk" style="margin:0"><input type="radio" name="ev" data-k="eval" value="T" ${k.eval!=='S'?'checked':''}> trimestres</label><label class="chk" style="margin:0 0 0 8px"><input type="radio" name="ev" data-k="eval" value="S" ${k.eval==='S'?'checked':''}> semestres</label></div>
+ <p class="help">« Enseignant du créneau » : à choisir seulement si ce créneau est assuré par un autre collègue (classe partagée, groupes de niveau…).</p></div>`}
+ h+=`<div class="card full pr"><h3>Grille de la semaine</h3><div class="rw np"><select data-k="ef" aria-label="Afficher"><option value="all">Tous les créneaux de l'équipe</option>
+ <optgroup label="Un enseignant">${S.profs.map(p=>`<option value="p:${p.id}" ${U.ef==='p:'+p.id?'selected':''}>${esc(pn(p.id))}</option>`).join('')}</optgroup>
+ <optgroup label="Une installation">${S.inst.map(i=>`<option value="i:${i.id}" ${U.ef==='i:'+i.id?'selected':''}>${esc(i.nom)}</option>`).join('')}</optgroup>
+ <optgroup label="Une classe">${cls.map(c=>`<option value="c:${esc(c)}" ${U.ef==='c:'+c?'selected':''}>${esc(c)}</option>`).join('')}</optgroup></select>
+ <select data-k="ew" aria-label="Semaines"><option value="">Semaines A et B</option><option value="A" ${U.ew==='A'?'selected':''}>Semaine A</option><option value="B" ${U.ew==='B'?'selected':''}>Semaine B</option></select><span class="sp"></span><button class="btn s r" data-o="print" data-p="edt">🖨 Imprimer</button></div>
+ <p class="help">${esc(efLab())}${U.ew?' · semaine '+U.ew:''} · couleur = enseignant · hachures = semaines A ou B seulement · contour rouge = conflit · touchez un créneau pour le modifier.</p>${grille(cf)}
+ <div class="lgd">${S.profs.map(p=>`<span><span class="dot" style="background:${p.couleur}"></span>${esc(pn(p.id))}</span>`).join('')}</div></div>`;
+ h+=`<div class="card full"><h3>Conflits d'emploi du temps</h3>${cf.P.length||cf.I.length?'<ul style="margin:0;padding-left:20px">'+cf.P.map(({a,b})=>`<li class="ko"><b>${esc(pn(a.prof))}</b> a deux classes en même temps : ${esc(a.cl)} (${esc(crLab(a.c))}) et ${esc(b.cl)} (${esc(crLab(b.c))})</li>`).join('')
+  +cf.I.map(x=>`<li class="wa"><b>${esc(inN(x.inst))}</b> (${x.cap} classe${x.cap>1?'s':''} max.) : ${x.g.map(y=>esc(y.cl)+' '+esc(crLab(y.c))).join(' · ')}</li>`).join('')+'</ul><p class="help">Les conflits d\'installation tiennent compte de l\'installation habituelle des créneaux ; le détail date par date (installation propre à chaque cycle) est dans Programmation.</p>':'<p class="ok">✓ Aucun conflit d\'enseignant ni d\'installation.</p>'}</div></div>`;
+ $('#view').innerHTML=h;if(U.scr){const c=$('#crc');c&&c.scrollIntoView({block:'start'});U.scr=0}}
+function efLab(){const[t,v]=String(U.ef).split(/:(.*)/);return t==='p'?'Enseignant : '+pn(v):t==='i'?'Installation : '+inN(v):t==='c'?'Classe : '+v:'Toute l\'équipe'}
+function grille(cf){const[t,v]=String(U.ef).split(/:(.*)/);let L=CR().filter(x=>t==='p'?x.prof===v:t==='i'?x.inst===v:t==='c'?x.cl===v:true);
+ if(U.ew)L=L.filter(x=>x.c.sem==='AB'||x.c.sem===U.ew);
+ if(!L.length)return '<div class="empty"><b>Aucun créneau à afficher</b>Ajoutez des créneaux aux classes ci-dessus.</div>';
+ const days=[1,2,3,4,5,...(L.some(x=>+x.c.jour===6)?[6]:[])];let h0=Math.min(480,...L.map(x=>tm(x.c.hd))),h1=Math.max(1080,...L.map(x=>tm(x.c.hf)));h0=Math.floor(h0/60)*60;h1=Math.ceil(h1/60)*60;
+ const PX=1.1,H=(h1-h0)*PX;let g=`<div class="wg" style="--nd:${days.length};--h:${H}px"><div class="dh"></div>${days.map(d=>`<div class="dh">${JL[d]}</div>`).join('')}<div class="hc">`;
+ for(let m=h0;m<=h1;m+=60)g+=`<span style="top:${(m-h0)*PX}px">${m/60}h</span>`;g+='</div>';
+ for(const d of days){const D=L.filter(x=>+x.c.jour===d).sort((a,b)=>tm(a.c.hd)-tm(b.c.hd)||a.cl.localeCompare(b.cl));
+  const lanes=[];D.forEach(x=>{let i=lanes.findIndex(e=>e<=tm(x.c.hd));if(i<0){i=lanes.length;lanes.push(0)}lanes[i]=tm(x.c.hf);x.l=i});
+  const n=Math.max(1,lanes.length);g+=`<div class="dc">`;for(let m=h0+60;m<h1;m+=60)g+=`<div class="hl" style="top:${(m-h0)*PX}px"></div>`;
+  g+=D.map(x=>{const top=(tm(x.c.hd)-h0)*PX,hh=Math.max(18,(tm(x.c.hf)-tm(x.c.hd))*PX-2);
+   return `<div class="blk${x.c.sem!=='AB'?' ab':''}${cf.ids.has(x.c.id)?' cf':''}" data-o="blk" data-c="${esc(x.cl)}" data-id="${x.c.id}" style="top:${top}px;height:${hh}px;left:calc(${x.l*100/n}% + 2px);width:calc(${100/n}% - 4px);background-color:${pcol(x.prof)}" title="${esc(x.cl+' · '+crLab(x.c)+(x.prof?' · '+pn(x.prof):'')+(x.inst?' · '+inN(x.inst):''))}">
+   <b>${esc(x.cl)}</b>${x.c.hd}–${x.c.hf}${x.c.sem!=='AB'?' · '+x.c.sem:''}<br><i>${esc(pin(x.prof)||'?')}${x.inst?' · '+esc(inN(x.inst)):''}</i></div>`}).join('')+'</div>'}
+ return g+'</div>'}
+function crModal(cl,id){const k=KL(cl),c=k.cren.find(x=>x.id===id);if(!c)return;
+ modal(`<h3>Créneau · ${esc(cl)}</h3><form id="f"><div class="rw"><label>Jour<select name="jour">${[1,2,3,4,5,6].map(j=>`<option value="${j}" ${+c.jour===j?'selected':''}>${JL[j]}</option>`).join('')}</select></label><label>Début<input type="time" name="hd" value="${c.hd}"></label><label>Fin<input type="time" name="hf" value="${c.hf}"></label>
+ <label>Semaines<select name="sem"><option value="AB">toutes</option><option value="A" ${c.sem==='A'?'selected':''}>A</option><option value="B" ${c.sem==='B'?'selected':''}>B</option></select></label></div>
+ <label>Installation habituelle<select name="inst">${optI(c.inst||'')}</select></label><label>Enseignant du créneau<select name="prof">${optP(c.prof||'','enseignant de la classe ('+(pn(k.prof)||'non désigné')+')')}</select></label>
+ <div class="bar"><button class="btn">Enregistrer</button><button type="button" class="btn k" id="del">Supprimer</button><span class="sp"></span><button type="button" class="btn r" data-m="close">Annuler</button></div></form>`,m=>{
+  m.querySelector('#f').onsubmit=e=>{e.preventDefault();const f=e.target;Object.assign(c,{jour:+f.jour.value,hd:f.hd.value,hf:f.hf.value<f.hd.value?f.hd.value:f.hf.value,sem:f.sem.value,inst:f.inst.value,prof:f.prof.value});save();close();render()};
+  confirmBtn(m.querySelector('#del'),()=>{k.cren=k.cren.filter(x=>x!==c);k.cycles.forEach(y=>y.cren=(y.cren||[]).filter(x=>x!==id));save();close();render()})})}
+
+/* 4. Programmation */
+function renderProg(){const cls=allCls(),oc=selCl();
+ let h=head('📚 Programmation annuelle',"Les cycles de chaque classe : APSA, champ d'apprentissage, dates, créneaux et installation. Le planning de l'équipe et les contrôles sont en dessous.");
+ if(!cls.length){$('#view').innerHTML=h+noClass();return}
+ const K=KL(oc),cy=sortCy(K),ch=caH(oc);
+ h+=`<div class="card" id="crc"><h3>Cycles de la classe ${esc(oc)} <span class="help" style="text-transform:none;letter-spacing:0">· ${esc(K.niveau)} · ${esc(pn(K.prof)||'enseignant non désigné')}</span></h3>${clChips(oc,'pcl')}
+ ${K.cren.length?'':`<p class="wa">⚠ Cette classe n'a pas encore de créneau : ajoutez-les dans <button class="btn s r" data-nav="edt">🗓️ Emplois du temps</button> pour calculer les séances.</p>`}
+ <div class="tw"><table class="t"><thead><tr><th>APSA et CA</th><th>Dates</th><th>Créneaux</th><th>Installation</th><th class="n">Séances</th><th></th></tr></thead><tbody>
+ ${cy.map(c=>{const r=cyS(oc,c),hh=r.out.reduce((n,x)=>n+dur(x.c),0);return `<tr><td style="min-width:200px"><div class="rw" style="margin:0;flex-wrap:nowrap"><input data-k="cy" data-id="${c.id}" data-p="nom" list="apsaL" value="${esc(c.nom)}" style="flex:1;min-width:0" aria-label="APSA">${caSel(c.ca||'',`data-k="cy" data-id="${c.id}" data-p="ca"`)}</div></td>
+  <td style="white-space:nowrap"><input type="date" data-k="cy" data-id="${c.id}" data-p="du" value="${c.du||''}" aria-label="Début"><br><input type="date" data-k="cy" data-id="${c.id}" data-p="au" value="${c.au||''}" aria-label="Fin"></td>
+  <td>${K.cren.map(x=>`<label class="chk" style="margin:2px 0;font-size:.8rem"><input type="checkbox" data-k="cyc-cr" data-id="${c.id}" value="${x.id}" ${(c.cren||[]).includes(x.id)?'checked':''}> ${esc(crLab(x))}</label>`).join('')||'<span class="help">aucun</span>'}</td>
+  <td><select data-k="cy" data-id="${c.id}" data-p="inst" aria-label="Installation">${optI(c.inst||'','installation des créneaux')}</select></td>
+  <td class="n">${c.du&&c.au&&c.cren?.length?`<b class="ok">${r.out.length}</b> · ${fh(hh)}${r.skip.length?`<br><span class="help" title="${esc(r.skip.map(x=>frD(x.date)+' : '+x.r).join('\n'))}">${r.skip.length} retirée(s) ⓘ</span>`:''}`:'<span class="help">à compléter</span>'}</td>
+  <td><button class="btn s k" data-o="cy-rm" data-id="${c.id}">✕</button></td></tr>`}).join('')||'<tr><td colspan="6" class="help">Aucun cycle : ajoutez-en ou répartissez l\'année.</td></tr>'}</tbody></table></div>
+ <div class="rw"><button class="btn s y" data-o="cy-add">＋ Cycle</button><span class="help">ou répartir l'année en</span><input type="number" id="nrep" min="1" max="12" value="${Math.max(3,cy.length)}" style="width:70px" aria-label="Nombre de cycles"><button class="btn s r" data-o="rep">cycles de même durée</button><span class="sp"></span><button class="btn s r" data-o="copy">📋 Copier vers d'autres classes…</button></div>
+ <div class="chips">${Object.keys(CAS).map(k=>`<span style="${ch[k]?'':'opacity:.45'}">${caTag(k)} ${ch[k]?fh(ch[k]):'non programmé'}</span>`).join('')}${ch['']?`<span>sans CA : ${fh(ch[''])}</span>`:''}</div>
+ ${(w=>w.length?`<p class="wa">⚠ ${esc(w.join(' · '))}</p>`:'<p class="ok">✓ Programmation complète pour cette classe.</p>')(controles(oc))}</div>`;
+ const nivs=[...new Set(cls.map(c=>KL(c).niveau))];
+ h+=`<div class="card pr"><h3>Planning annuel de l'équipe ${esc(annee())}</h3><div class="rw np"><select data-k="pc" aria-label="Couleurs"><option value="ca">Couleurs : champs d'apprentissage</option><option value="inst" ${U.pc==='inst'?'selected':''}>Couleurs : installations</option><option value="prof" ${U.pc==='prof'?'selected':''}>Couleurs : enseignants</option></select>
+ <select data-k="pn" aria-label="Niveau"><option value="">Tous les niveaux</option>${nivs.map(n=>`<option ${U.pn===n?'selected':''}>${esc(n)}</option>`).join('')}</select><span class="sp"></span><button class="btn s r" data-o="print" data-p="plan">🖨 Imprimer</button></div>${gantt()}</div>`;
+ const oc2=occupation(),rows=cls.map(cl=>{const c=caH(cl),w=controles(cl);return `<tr data-o="pcl" data-c="${esc(cl)}" class="${cl===oc?'on':''}"><td><b>${esc(cl)}</b><br><span class="help">${esc(KL(cl).niveau)} · ${esc(pin(KL(cl).prof))}</span></td>${Object.keys(CAS).map(k=>`<td class="n">${c[k]?fh(c[k]):'<span class="help">–</span>'}</td>`).join('')}<td class="n">${Object.values(c).filter(Boolean).length?Object.keys(CAS).filter(k=>c[k]).length:0}</td><td class="${w.length?'wa':'ok'}" style="font-size:.78rem">${w.length?esc(w.join(' · ')):'✓'}</td></tr>`}).join('');
+ h+=`<div class="card pr"><h3>Contrôles de la programmation</h3><div class="tw" style="max-height:460px"><table class="t"><thead><tr><th>Classe</th>${Object.keys(CAS).map(k=>`<th class="n">${caTag(k)}</th>`).join('')}<th class="n">CA</th><th>Points à vérifier</th></tr></thead><tbody>${rows}</tbody></table></div>
+ <p class="help">Heures de pratique programmées par champ d'apprentissage sur l'année (vacances, fériés et périodes interruptives déduits). Le CA5 ne concerne que le lycée.</p>
+ <h3 style="margin-top:14px">Installations : séances en surnombre</h3>${oc2.length?`<ul style="margin:0;padding-left:20px">${oc2.slice(0,40).map(x=>`<li class="wa">${esc(frD(x.date))} · <b>${esc(inN(x.inst))}</b> (${x.cap} max.) : ${x.g.map(y=>`${esc(y.cl)} ${y.c.hd}–${y.c.hf} (${esc(y.cy.nom)})`).join(' · ')}</li>`).join('')}</ul>${oc2.length>40?`<p class="help">… et ${oc2.length-40} autre(s) date(s).</p>`:''}`:'<p class="ok">✓ Aucune installation en surnombre sur l\'année.</p>'}</div>`;
+ $('#view').innerHTML=h;if(U.scr){const c=$('#crc');c&&c.scrollIntoView({block:'start'});U.scr=0}}
+function colOf(cl,c){if(U.pc==='inst'){const i=c.inst||KL(cl).cren.find(x=>(c.cren||[]).includes(x.id))?.inst||'';return i?PAL[S.inst.findIndex(x=>x.id===i)%PAL.length]:'#9fb0a6'}if(U.pc==='prof')return pcol(KL(cl).prof);return CAC[c.ca||'']}
+function gantt(){const o=O(),D0=o.debut,D1=addD(o.fin,1),N=Math.max(1,dd(D0,D1)),X=d=>Math.max(0,Math.min(100,dd(D0,d)/N*100)).toFixed(3);
+ const cls=allCls().filter(c=>!U.pn||KL(c).niveau===U.pn);if(!cls.length)return '<p class="help">Aucune classe.</p>';
+ const bg=o.vac.filter(v=>v.au>=D0&&v.du<=o.fin).map(v=>`<i class="vb" style="left:${X(v.du)}%;width:${X(addD(v.au,1))-X(v.du)}%" title="${esc(v.nom)}"></i>`).join('')+(today()>=D0&&today()<=o.fin?`<i class="td" style="left:${X(today())}%" title="Aujourd'hui"></i>`:'');
+ let mo='';for(let d=D0.slice(0,8)+'01';d<=o.fin;){if(d>=D0)mo+=`<span class="mt" style="left:${X(d)}%">${new Date(d+'T12:00').toLocaleDateString('fr-FR',{month:'short'})}</span>`;const x=new Date(d+'T12:00');x.setMonth(x.getMonth()+1);d=iso(x)}
+ let h=`<div class="gt"><div class="gr" style="position:sticky;top:0;z-index:3;background:var(--head)"><div class="gl" style="background:var(--head)">Classe</div><div class="trk" style="height:22px">${mo}</div></div>`,cur='';
+ for(const cl of cls){const K=KL(cl);if(K.niveau!==cur){cur=K.niveau;h+=`<div class="gr"><div class="gn">${esc(cur)}</div></div>`}
+  const cy=sortCy(K).filter(c=>c.du&&c.au),lanes=[];cy.forEach(c=>{let i=lanes.findIndex(e=>e<c.du);if(i<0){i=lanes.length;lanes.push('')}lanes[i]=c.au;c._l=i});
+  const H=Math.max(1,lanes.length)*23+5;
+  h+=`<div class="gr"><div class="gl" data-o="pcl" data-c="${esc(cl)}">${esc(cl)}<small>${esc(pn(K.prof)||'—')}</small></div><div class="trk" style="height:${H}px">${bg}${cy.map(c=>`<div class="cb" data-o="pcl" data-c="${esc(cl)}" style="left:${X(c.du)}%;width:calc(${X(addD(c.au,1))-X(c.du)}% - 2px);top:${3+c._l*23}px;background:${colOf(cl,c)}" title="${esc(cl+' · '+c.nom+(c.ca?' ('+c.ca+')':'')+' · '+sh(c.du)+' → '+sh(c.au)+(c.inst?' · '+inN(c.inst):''))}">${esc(c.nom)}</div>`).join('')}</div></div>`}
+ h+='</div>';
+ const lg=U.pc==='inst'?S.inst.map((i,n)=>[PAL[n%PAL.length],i.nom]):U.pc==='prof'?S.profs.map(p=>[p.couleur,pn(p.id)]):Object.keys(CAS).map(k=>[CAC[k],k+' · '+CAS[k].split(' ').slice(0,4).join(' ')+'…']);
+ return h+`<div class="lgd">${lg.map(([c,t])=>`<span><span class="dot" style="background:${c}"></span>${esc(t)}</span>`).join('')}<span><span class="dot" style="background:rgba(255,255,255,.15)"></span>vacances</span></div>`}
+function copyModal(src){const S0=KL(src),cls=allCls().filter(c=>c!==src);
+ modal(`<h3>📋 Copier la programmation de ${esc(src)}</h3><p class="help">Les cycles (APSA, CA, dates, installation) sont recopiés. Les créneaux sont repris dans le même ordre (1er créneau → 1er créneau…). Les classes du même niveau sont cochées.</p>
+ <form id="f"><div class="lst">${cls.map(c=>`<label class="chk"><input type="checkbox" name="cl" value="${esc(c)}" ${KL(c).niveau===S0.niveau?'checked':''}> <b>${esc(c)}</b> <span class="help">${esc(KL(c).niveau)} · ${KL(c).cycles.length} cycle(s) · ${KL(c).cren.length} créneau(x)</span></label>`).join('')||'<p class="help">Aucune autre classe.</p>'}</div>
+ <label class="chk"><input type="checkbox" name="rep" checked> Remplacer les cycles existants des classes cochées</label>
+ <div class="bar"><button class="btn">Copier</button><span class="sp"></span><button type="button" class="btn r" data-m="close">Annuler</button></div></form>`,m=>{
+  m.querySelector('#f').onsubmit=e=>{e.preventDefault();const f=e.target,T=[...f.querySelectorAll('[name=cl]:checked')].map(x=>x.value),idx=id=>S0.cren.findIndex(x=>x.id===id);
+   for(const t of T){const K=KL(t);if(f.rep.checked)K.cycles=[];
+    for(const c of S0.cycles){let cr=(c.cren||[]).map(id=>K.cren[idx(id)]?.id).filter(Boolean);if(!cr.length)cr=K.cren.map(x=>x.id);K.cycles.push({id:uid(),nom:c.nom,ca:c.ca,du:c.du,au:c.au,inst:c.inst||'',cren:cr})}}
+   OM=`✅ Programmation copiée vers ${T.length} classe(s)`;save();close();render()}})}
+
+/* 5. Partage */
+function profCls(pid){return allCls().filter(cl=>teaches(pid,cl))}
+function pack(pid){const o={format:FMT,v:1,app:VER,genere:new Date().toISOString(),etab:S.etab,auteur:S.auteur,annee:annee(),org:O(),profs:S.profs,inst:S.inst,classes:{}};
+ for(const cl of allCls()){const K=KL(cl);if(!K.cren.length&&!K.cycles.length)continue;if(pid&&!teaches(pid,cl))continue;o.classes[cl]={...K,effectif:eff(cl)}}
+ if(pid)o.pour=pid;return o}
+const slug=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^\w-]+/g,'_').replace(/^_|_$/g,'');
+function dlBlob(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000)}
+function dlPack(pid){const p=pack(pid),n=Object.keys(p.classes).length;if(!n){msg('⚠ Aucune classe programmée'+(pid?' pour cet enseignant':''),1);return}
+ dlBlob(new Blob([JSON.stringify(p,null,1)],{type:'application/json'}),`CoordoEPS_${pid?slug(pn(pid))+'_':''}${slug(S.etab)||'Programmation'}_${annee()}.json`);msg(`⬇ Fichier lancé : ${n} classe(s)`)}
+function renderShare(){const cls=allCls(),nb=cls.filter(c=>KL(c).cycles.length).length;
+ let h=head('📤 Partager avec l\'équipe',"La programmation complète (calendrier, emplois du temps, cycles) tient dans un seul fichier. Chaque collègue l'importe dans SuiviProf EPS et retrouve ses classes, ses créneaux et ses cycles, séances générées.")+'<div class="og">';
+ h+=`<div class="card full"><h3>1 · Fichier de programmation de l'équipe</h3><div class="rw"><label style="flex:2">Établissement<input data-k="etab" value="${esc(S.etab)}"></label><label style="flex:1">Coordonnateur<input data-k="auteur" value="${esc(S.auteur)}"></label></div>
+ <p class="help">${cls.length} classe(s) · ${nb} programmée(s) · ${S.profs.length} enseignant(s) · ${S.inst.length} installation(s) · année ${esc(annee())}</p>
+ <div class="bar"><button class="btn y" data-g="dl">⬇ Programmation de toute l'équipe (.json)</button></div>
+ ${S.profs.length?`<label>Ou un fichier par enseignant (seulement ses classes)</label><div class="rw">${S.profs.map(p=>`<button class="btn s r" data-g="dlp" data-id="${p.id}"><span class="dot" style="background:${p.couleur}"></span>${esc(pn(p.id))} · ${profCls(p.id).length} classe(s)</button>`).join('')}</div>`:''}
+ <p class="help">Envoyez le fichier par la messagerie de l'ENT, un mail ou une clé USB. Sur un appareil où CoordoEPS et SuiviProf EPS sont ouverts dans le même navigateur, l'import se fait aussi sans fichier.</p></div>`;
+ h+=`<div class="card"><h3>2 · Dans SuiviProf EPS (chaque collègue)</h3><ol style="margin:0;padding-left:20px;line-height:1.7"><li>Ouvrir <b>SuiviProf EPS</b> → menu <b>📅 Organisation annuelle</b>.</li><li>Toucher <b>📥 Importer la programmation d'équipe</b> et choisir le fichier .json.</li><li>Choisir <b>son nom</b> : ses classes sont cochées.</li><li>Valider : calendrier, créneaux et cycles sont créés, les séances générées. Un nouvel import met à jour les cycles sans effacer les séances déjà saisies.</li></ol></div>`;
+ h+=`<div class="card"><h3>3 · Tableaux et impression</h3><p class="help">Classeur .xlsx de synthèse : calendrier, équipe et services, installations, emplois du temps, programmation, heures par champ d'apprentissage.</p><div class="bar"><button class="btn r" data-g="xlsx">⬇ Tableau de synthèse (.xlsx)</button></div>
+ <div class="bar"><button class="btn r s" data-nav="edt">🗓️ Grille à imprimer</button><button class="btn r s" data-nav="prog">📚 Planning à imprimer</button></div></div>`;
+ h+=`<div class="card"><h3>4 · Mes Apps EPS</h3><p class="help">Ajoute à chaque élève (feuille « ${APP} » du classeur Mes Apps EPS) les cycles programmés pour sa classe : dates, APSA, CA, enseignant, installation. ${E.length} élève(s) dans la base locale.</p>
+ <div class="bar"><button class="btn" data-g="sync">💾 Enregistrer dans Mes Apps EPS</button><button class="btn r" data-g="xmae">⬇ Feuille CoordoEPS (.xlsx)</button></div><div class="bar"><button class="btn r s" data-g="list">📂 Charger la liste des élèves</button></div><p class="msg" id="sm"></p></div>`;
+ h+=`<div class="card"><h3>5 · Sauvegarde</h3><p class="help">Le travail est conservé sur cet appareil. Le fichier de l'équipe sert aussi de sauvegarde : le restaurer sur un autre appareil ou le confier au prochain coordonnateur.</p>
+ <div class="bar"><button class="btn r" data-g="dl">⬇ Sauvegarder</button><button class="btn r" data-g="rest">⬆ Restaurer un fichier CoordoEPS</button></div><div class="bar"><button class="btn r s" data-g="demo">🧪 Exemple</button><button class="btn k s" data-g="reset">Tout effacer</button></div></div></div>`;
+ $('#view').innerHTML=h}
+
+/* Synthèse .xlsx (écriture autonome : zip non compressé) */
+const CRCT=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+const crc32=u=>{let c=~0;for(let i=0;i<u.length;i++)c=CRCT[(c^u[i])&255]^(c>>>8);return(~c)>>>0};
+function zipStore(files){const enc=new TextEncoder(),parts=[],cen=[];let off=0;
+ for(const f of files){const nm=enc.encode(f.name),d=enc.encode(f.x),c=crc32(d),L=new DataView(new ArrayBuffer(30));
+  L.setUint32(0,0x04034b50,true);L.setUint16(4,20,true);L.setUint16(6,0x800,true);L.setUint32(14,c,true);L.setUint32(18,d.length,true);L.setUint32(22,d.length,true);L.setUint16(26,nm.length,true);
+  parts.push(new Uint8Array(L.buffer),nm,d);const C=new DataView(new ArrayBuffer(46));C.setUint32(0,0x02014b50,true);C.setUint16(4,20,true);C.setUint16(6,20,true);C.setUint16(8,0x800,true);C.setUint32(16,c,true);C.setUint32(20,d.length,true);C.setUint32(24,d.length,true);C.setUint16(28,nm.length,true);C.setUint32(42,off,true);
+  cen.push(new Uint8Array(C.buffer),nm);off+=30+nm.length+d.length}
+ const cs=cen.reduce((n,u)=>n+u.length,0),e=new DataView(new ArrayBuffer(22));e.setUint32(0,0x06054b50,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);e.setUint32(12,cs,true);e.setUint32(16,off,true);
+ return new Blob([...parts,...cen,new Uint8Array(e.buffer)],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'})}
+function xlsx(sheets){const xe=v=>String(v).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'),H='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',NS='http://schemas.openxmlformats.org/spreadsheetml/2006/main',RN='http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+ const col=i=>{let s='';for(i++;i>0;i=Math.floor((i-1)/26))s=String.fromCharCode(65+(i-1)%26)+s;return s};
+ const sx=rows=>{const nc=Math.max(1,...rows.map(r=>r.length)),w=[...Array(nc)].map((_,c)=>Math.min(50,Math.max(8,...rows.map(r=>String(r[c]??'').length+2))));
+  return H+`<worksheet xmlns="${NS}"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>${w.map((v,i)=>`<col min="${i+1}" max="${i+1}" width="${v}" customWidth="1"/>`).join('')}</cols><sheetData>`
+  +rows.map((r,ri)=>`<row r="${ri+1}">`+r.map((v,ci)=>v==null||v===''?'':typeof v==='number'&&isFinite(v)?`<c r="${col(ci)}${ri+1}"${ri?'':' s="1"'}><v>${v}</v></c>`:`<c r="${col(ci)}${ri+1}"${ri?'':' s="1"'} t="inlineStr"><is><t xml:space="preserve">${xe(v)}</t></is></c>`).join('')+'</row>').join('')+'</sheetData></worksheet>'};
+ return zipStore([{name:'[Content_Types].xml',x:H+'<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'+sheets.map((s,i)=>`<Override PartName="/xl/worksheets/sheet${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('')+'</Types>'},
+  {name:'_rels/.rels',x:H+`<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="${RN}/officeDocument" Target="xl/workbook.xml"/></Relationships>`},
+  {name:'xl/workbook.xml',x:H+`<workbook xmlns="${NS}" xmlns:r="${RN}"><sheets>${sheets.map((s,i)=>`<sheet name="${xe(s.name)}" sheetId="${i+1}" r:id="rId${i+1}"/>`).join('')}</sheets></workbook>`},
+  {name:'xl/_rels/workbook.xml.rels',x:H+'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+sheets.map((s,i)=>`<Relationship Id="rId${i+1}" Type="${RN}/worksheet" Target="worksheets/sheet${i+1}.xml"/>`).join('')+`<Relationship Id="rId${sheets.length+1}" Type="${RN}/styles" Target="styles.xml"/></Relationships>`},
+  {name:'xl/styles.xml',x:H+`<styleSheet xmlns="${NS}"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFFE680"/></patternFill></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf/></cellStyleXfs><cellXfs count="2"><xf/><xf fontId="1" fillId="2" applyFont="1" applyFill="1"/></cellXfs></styleSheet>`},
+  ...sheets.map((s,i)=>({name:`xl/worksheets/sheet${i+1}.xml`,x:sx(s.rows)}))])}
+const r2=x=>Math.round(x*100)/100;
+function synthese(){const o=O(),cls=allCls(),Kc=Object.keys(CAS);
+ const cal=[['Type','Nom','Du','Au','Classes'],...o.vac.map(v=>['Vacances',v.nom,v.du,v.au,'']),...[...ferMap()].filter(([d])=>d>=o.debut&&d<=o.fin).map(([d,n])=>['Férié',n,d,d,'']),...o.inter.map(x=>['Période interruptive',x.nom,x.du,x.au,x.classes.join(', ')||'toutes']),...o.per.T.map(p=>['Trimestre',p.nom,p.du,p.au,'']),...o.per.S.map(p=>['Semestre',p.nom,p.du,p.au,''])];
+ const eq=[['Enseignant','Statut','Classes','EPS h/sem.','AS (h)','Total','ORS','Écart'],...S.profs.map(p=>{const s=service(p.id),t=s.h+(+p.as||0);return[pn(p.id),STAT[p.statut]?.[0]||'',s.cls.join(', '),r2(s.h),+p.as||0,r2(t),+p.ors||0,r2(t-(+p.ors||0))]})];
+ const ins=[['Installation','Type','Capacité (classes)','Remarque'],...S.inst.map(i=>[i.nom,i.type,+i.cap||1,i.rem||''])];
+ const edt=[['Classe','Niveau','Effectif','Jour','Début','Fin','Semaines','Enseignant','Installation'],...CR().map(x=>[x.cl,KL(x.cl).niveau,eff(x.cl)||'',JL[x.c.jour],x.c.hd,x.c.hf,x.c.sem==='AB'?'A et B':x.c.sem,pn(x.prof),inN(x.inst)])];
+ const prog=[['Classe','Niveau','Enseignant','APSA','CA','Du','Au','Créneaux','Installation','Séances','Heures'],...cls.flatMap(cl=>sortCy(KL(cl)).map(c=>{const r=cyS(cl,c);return[cl,KL(cl).niveau,pn(KL(cl).prof),c.nom,c.ca||'',c.du||'',c.au||'',KL(cl).cren.filter(x=>(c.cren||[]).includes(x.id)).map(crLab).join(' / '),inN(c.inst)||[...new Set(KL(cl).cren.filter(x=>(c.cren||[]).includes(x.id)).map(x=>inN(x.inst)).filter(Boolean))].join(' / '),r.out.length,r2(r.out.reduce((n,x)=>n+dur(x.c),0))]}))];
+ const ca=[['Classe','Niveau',...Kc.map(k=>k+' (h)'),'Points à vérifier'],...cls.map(cl=>{const c=caH(cl);return[cl,KL(cl).niveau,...Kc.map(k=>c[k]?r2(c[k]):0),controles(cl).join(' · ')]})];
+ return xlsx([{name:'Programmation',rows:prog},{name:'Emplois du temps',rows:edt},{name:'Équipe et services',rows:eq},{name:'Installations',rows:ins},{name:'Heures par CA',rows:ca},{name:'Calendrier',rows:cal.slice(0,1).concat(cal.slice(1).sort((a,b)=>String(a[2]).localeCompare(String(b[2]))))}])}
+
+/* Mes Apps EPS : une ligne par cycle pour chaque élève de la classe */
+function lignes(cl){const K=KL(cl);return sortCy(K).filter(c=>c.du&&c.au).map(c=>{const cr=K.cren.filter(x=>(c.cren||[]).includes(x.id));return{Date:c.du,Fin:c.au,Cycle:c.nom,CA:c.ca||'',Enseignant:pn([...new Set(cr.map(x=>crP(cl,x)))][0]||K.prof),Installation:inN(c.inst)||[...new Set(cr.map(x=>inN(x.inst)).filter(Boolean))].join(' / '),'Créneaux':cr.map(crLab).join(' / '),'Séances':cyS(cl,c).out.length}})}
+async function sync(){const m=$('#sm');try{E=await EPS.all();if(!E.length)throw new Error('aucune liste d\'élèves sur cet appareil');let n=0,k=0;
+ for(const e of E){const l=lignes(e.classe);const had=e.ext&&e.ext[APP];if(!l.length&&!had)continue;await EPS.setExt(APP,e.id,{lignes:l});n++;k+=l.length}
+ m.style.color='var(--ok)';m.textContent=`✅ ${n} élève(s) mis à jour (${k} ligne(s))`}catch(x){m.style.color='var(--ko)';m.textContent='❌ '+x.message}}
+async function exportMAE(){const m=$('#sm');try{const b=await EPS.exportXLSX({apps:[APP]});EPS.downloadXLSX(b,`CoordoEPS_${today()}.xlsx`);m.textContent='⬇ Export lancé'}catch(x){m.style.color='var(--ko)';m.textContent='❌ '+x.message+' (enregistrez d\'abord dans Mes Apps EPS)'}}
+
+/* Exemple complet */
+function demo(){if((S.profs.length||Object.values(S.classes).some(k=>k.cycles.length||k.cren.length))&&!confirm('Remplacer la programmation actuelle par l\'exemple ?'))return;
+ const p=(nom,prenom,statut,c)=>({id:uid(),nom,prenom,statut,ors:STAT[statut][1],as:3,couleur:c}),P=[p('MARTIN','Claire','agr','#4fb3ff'),p('DURAND','Karim','cert','#ff9f43'),p('LEROY','Sophie','cert','#d68bff'),p('PETIT','Hugo','contr','#ff6b8b')];
+ const i=(nom,type,cap)=>({id:uid(),nom,type,cap,rem:''}),I=[i('Gymnase municipal','Gymnase',2),i('Salle de danse','Salle spécialisée',1),i('Stade','Piste / stade',2),i('Piscine intercommunale','Piscine',1)];
+ S={v:1,etab:'Lycée de démonstration',auteur:'C. MARTIN',org:null,profs:P,inst:I,classes:{}};O();
+ const C=(cl,niv,pr,cr,prog)=>{const K=S.classes[cl]={niveau:niv,prof:P[pr].id,eval:'T',cren:cr.map(([j,hd,hf,sem,ins])=>({id:uid(),jour:j,hd,hf,sem:sem||'AB',inst:I[ins].id,prof:''})),cycles:[]};
+  repartir(prog.length,cl);sortCy(K).forEach((c,n)=>{const[nom,ins]=prog[n];c.nom=nom;c.ca=caOf(nom);c.inst=ins==null?'':I[ins].id})};
+ C('2NDE 1','2nde',0,[[1,'08:00','10:00','AB',0]],[['Natation',3],['Badminton'],['Acrosport',1],['Course d\'orientation',2]]);
+ C('2NDE 2','2nde',1,[[1,'08:00','10:00','AB',0]],[['Athlétisme',2],['Volley-ball'],['Natation',3],['Danse chorégraphiée',1]]);
+ C('2NDE 3','2nde',2,[[2,'10:00','12:00','AB',0]],[['Badminton'],['Natation',3],['Course d\'orientation',2],['Acrosport',1]]);
+ C('1G 1','1re',0,[[4,'13:30','15:30','AB',2]],[['Athlétisme'],['Handball',0],['Musculation',0]]);
+ C('1G 2','1re',3,[[4,'13:30','15:30','AB',0]],[['Musculation'],['Basket-ball'],['Escalade',2]]);
+ C('TG 1','Tle',1,[[5,'08:00','10:00','AB',0]],[['Badminton'],['Course d\'orientation',2],['Danse chorégraphiée',1]]);
+ C('1 MRC','1re Pro',3,[[2,'14:00','16:00','A',2],[5,'10:00','12:00','AB',0]],[['Tennis de table'],['Run & Bike',2],['Musculation']]);
+ U.cl='2NDE 1';OM='🧪 Exemple chargé : 4 enseignants, 4 installations, 7 classes programmées';save();render()}
+
+/* ───── Fenêtres ───── */
+function modal(h,bind){$('#mo').innerHTML=h;$('#ov').hidden=false;bind&&bind($('#mo'))}
+function close(){$('#ov').hidden=true;$('#mo').innerHTML=''}
+function confirmBtn(btn,fn){btn.onclick=()=>{if(btn.dataset.ok){fn();return}btn.dataset.ok=1;btn.textContent='Confirmer la suppression ?'}}
+function msg(t,ko){const m=$('#sm')||$('#om')||$('#st');if(m){m.style.color=ko?'var(--ko)':'var(--ok)';m.textContent=t}}
+$('#ov').addEventListener('click',e=>{if(e.target.id==='ov'||e.target.closest('[data-m=close]'))close()});
+addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#ov').hidden)close()});
+
+/* ───── Événements ───── */
+$('#view').addEventListener('change',e=>{const t=e.target,k=t.dataset.k;if(!k)return;const o=O(),oc=selCl(),K=oc?KL(oc):null,val=t.value;
+ if(k==='etab'||k==='auteur')S[k]=val.trim();
+ else if(k==='zone'){o.zone=val;o.vac=vacDef(val);OM='Vacances remplacées par le calendrier de la zone '+val}
+ else if(['debut','fin','ab'].includes(k))o[k]=val;else if(k==='als')o.als=t.checked;else if(k==='pent')o.pent=t.checked;
+ else if(k==='vac')o.vac[+t.dataset.i][t.dataset.p]=val;
+ else if(k==='per')o.per[t.dataset.pt][+t.dataset.i][t.dataset.p]=val;
+ else if(k==='pf'){const p=PR(t.dataset.id),f=t.dataset.p;p[f]=f==='ors'||f==='as'?+val||0:f==='nom'?val.trim().toUpperCase():val.trim();if(f==='statut')p.ors=STAT[val][1]}
+ else if(k==='in'){const i=IN(t.dataset.id),f=t.dataset.p;i[f]=f==='cap'?Math.max(1,+val||1):val.trim()}
+ else if(k==='kniv')KL(t.dataset.c).niveau=val;else if(k==='kprof')KL(t.dataset.c).prof=val;
+ else if(k==='cr'){const c=K.cren[+t.dataset.i],f=t.dataset.p;c[f]=f==='jour'?+val:val;if(f==='hd'&&c.hf<c.hd)c.hf=c.hd}
+ else if(k==='eval')K.eval=val;
+ else if(k==='cy'){const c=K.cycles.find(x=>x.id===t.dataset.id),f=t.dataset.p;c[f]=f==='nom'?val.trim()||c.nom:val;if(f==='nom'&&val in APSA)c.ca=caOf(val);if(f==='du'&&c.au&&c.au<val)c.au=val}
+ else if(k==='cyc-cr'){const c=K.cycles.find(x=>x.id===t.dataset.id);c.cren=(c.cren||[]).filter(x=>x!==val);if(t.checked)c.cren.push(val)}
+ else if(k==='ef'||k==='ew'||k==='pc'||k==='pn'){U[k]=val;return render()}
+ save();render()});
+$('#view').addEventListener('click',async e=>{const b=e.target.closest('[data-o]');if(!b)return;const a=b.dataset.o,o=O(),oc=selCl(),K=oc?KL(oc):null;
+ if(a==='cl'||a==='pcl'){U.cl=b.dataset.c;U.scr=1;if(a==='pcl'&&U.view!=='prog')U.view='prog';return render()}
+ if(a==='blk')return crModal(b.dataset.c,b.dataset.id);
+ if(a==='print'){document.body.dataset.pr=b.dataset.p;b.closest('.card').classList.add('pr');setTimeout(()=>{print();delete document.body.dataset.pr},50);return}
+ if(/-rm$/.test(a)&&!b.dataset.ok){b.dataset.ok=1;b.textContent='Supprimer ?';return}
+ if(a==='vac-add')o.vac.push({nom:'Vacances',du:o.debut,au:o.debut});
+ else if(a==='vac-rm')o.vac.splice(+b.dataset.i,1);
+ else if(a==='vac-def'){o.vac=vacDef(o.zone);OM='✅ Calendrier officiel 2026-2027, zone '+o.zone}
+ else if(a==='vac-net'){$('#om').textContent='Chargement…';try{o.vac=await vacNet();OM='✅ Vacances mises à jour depuis le calendrier officiel en ligne'}catch(x){$('#om').textContent='❌ Serveur injoignable ('+(x.message||x)+') : calendrier actuel conservé';return}}
+ else if(a==='int-rm')o.inter.splice(+b.dataset.i,1);
+ else if(a==='flip'){const m=b.dataset.m,i=o.flip.indexOf(m);if(i<0)o.flip.push(m);else o.flip.splice(i,1)}
+ else if(a==='pf-add')S.profs.push({id:uid(),nom:'',prenom:'',statut:'cert',ors:20,as:3,couleur:PAL[S.profs.length%PAL.length]});
+ else if(a==='pf-rm'){const id=b.dataset.id;S.profs=S.profs.filter(p=>p.id!==id);Object.values(S.classes).forEach(k=>{if(k.prof===id)k.prof='';k.cren.forEach(c=>{if(c.prof===id)c.prof=''})})}
+ else if(a==='in-add')S.inst.push({id:uid(),nom:'',type:'Gymnase',cap:1,rem:''});
+ else if(a==='in-rm'){const id=b.dataset.id;S.inst=S.inst.filter(i=>i.id!==id);Object.values(S.classes).forEach(k=>{k.cren.forEach(c=>{if(c.inst===id)c.inst=''});k.cycles.forEach(c=>{if(c.inst===id)c.inst=''})})}
+ else if(a==='cl-rm'){delete S.classes[b.dataset.c];OM='Classe retirée'}
+ else if(a==='cr-add'){const l=K.cren[K.cren.length-1],c={id:uid(),jour:l?l.jour:1,hd:l?l.hd:'08:00',hf:l?l.hf:'10:00',sem:'AB',inst:l?l.inst:'',prof:''};K.cren.push(c);K.cycles.forEach(y=>{if(!y.cren||y.cren.length===K.cren.length-1)(y.cren=y.cren||[]).push(c.id)})}
+ else if(a==='cr-rm'){const id=K.cren[+b.dataset.i].id;K.cren.splice(+b.dataset.i,1);K.cycles.forEach(c=>c.cren=(c.cren||[]).filter(x=>x!==id))}
+ else if(a==='cy-add'){const l=sortCy(K).filter(c=>c.au).pop(),du=l?addD(l.au,1):'';K.cycles.push({id:uid(),nom:'Nouveau cycle',ca:'',du,au:'',inst:'',cren:K.cren.map(x=>x.id)})}
+ else if(a==='cy-rm')K.cycles=K.cycles.filter(c=>c.id!==b.dataset.id);
+ else if(a==='rep')repartir(Math.max(1,+$('#nrep').value||3),oc);
+ else if(a==='copy')return copyModal(oc);
+ else return;
+ save();render()});
+$('#view').addEventListener('submit',e=>{const f=e.target;e.preventDefault();
+ if(f.id==='fint'){O().inter.push({id:uid(),nom:f.nom.value.trim(),du:f.du.value,au:f.au.value<f.du.value?f.du.value:f.au.value,classes:[...f.querySelectorAll('[name=cl]:checked')].map(x=>x.value)});OM='✅ Période ajoutée'}
+ else if(f.id==='fcl'){const n=f.nom.value.trim();if(!n)return;KL(n);U.cl=n;OM='✅ Classe '+n+' ajoutée : réglez son niveau, son enseignant et ses créneaux'}
+ save();render()});
+document.addEventListener('click',async e=>{const n=e.target.closest('[data-nav]');if(n){U.view=n.dataset.nav;render();scrollTo(0,0);return}
+ const g=e.target.closest('[data-g]');if(!g)return;const k=g.dataset.g;
+ if(k==='share'){U.view='share';render();scrollTo(0,0)}
+ else if(k==='list')$('#fList').click();else if(k==='demo')demo();
+ else if(k==='dl')dlPack('');else if(k==='dlp')dlPack(g.dataset.id);
+ else if(k==='xlsx'){try{dlBlob(synthese(),`CoordoEPS_synthese_${slug(S.etab)||'equipe'}_${annee()}.xlsx`);msg('⬇ Tableau de synthèse lancé')}catch(x){msg('❌ '+x.message,1)}}
+ else if(k==='sync')sync();else if(k==='xmae')exportMAE();else if(k==='rest')$('#fJson').click();
+ else if(k==='reset'){if(!g.dataset.ok){g.dataset.ok=1;g.textContent='Confirmer : tout effacer ?';return}S={v:1,etab:'',auteur:'',org:null,profs:[],inst:[],classes:{}};OM='Programmation effacée';save();render()}});
+$('#fList').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;try{await EPS.importFile(f);E=await EPS.all();msg(`✅ ${E.length} élève(s) chargé(s)`);render()}catch(x){msg('❌ '+x.message,1)}};
+$('#fJson').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;try{const j=JSON.parse(await f.text());if(j.format!==FMT||!j.classes)throw new Error('ce n\'est pas un fichier CoordoEPS');
+ if(j.pour&&!confirm(`Ce fichier ne contient que les classes de ${(j.profs||[]).find(p=>p.id===j.pour)?.nom||'un enseignant'}. Le restaurer quand même ?`))return;
+ const cl={};for(const[k,v]of Object.entries(j.classes)){const{effectif,...r}=v;cl[k]=r}
+ S={v:1,etab:j.etab||'',auteur:j.auteur||'',org:j.org||null,profs:j.profs||[],inst:j.inst||[],classes:cl};OM=`✅ Programmation restaurée : ${Object.keys(cl).length} classe(s)`;save();render()}catch(x){msg('❌ '+x.message,1)}};
+
+$('#apsaL').innerHTML=Object.keys(APSA).map(a=>`<option value="${esc(a)}">`).join('');
+if('serviceWorker'in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
+render();
+(async()=>{try{E=await EPS.all()}catch(x){E=[]}render()})();
+}
+</script>
+</body>
+</html>

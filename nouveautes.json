@@ -1,0 +1,14 @@
+[
+ {
+  "v": "1.0.0",
+  "date": "2026-11-24",
+  "titre": "Bienvenue dans CoordoEPS",
+  "items": [
+   "Année : calendrier commun à l'équipe (vacances par zone, fériés, semaines A/B, périodes interruptives, trimestres et semestres).",
+   "Équipe et installations : enseignants, obligations de service et forfait AS, installations avec leur capacité ; tableau des services (heures, HSA, heures à attribuer).",
+   "Emplois du temps : niveau, enseignant et créneaux de chaque classe, grille de la semaine par enseignant, installation ou classe, détection des conflits.",
+   "Programmation : cycles par classe (APSA, CA, dates, créneaux, installation), répartition automatique, copie vers les classes d'un niveau, planning annuel de l'équipe et contrôles (heures par CA, séances hors cycle, installations en surnombre).",
+   "Partage : un fichier .json pour toute l'équipe ou par enseignant, à importer dans SuiviProf EPS ; tableau de synthèse .xlsx ; enregistrement dans Mes Apps EPS."
+  ]
+ }
+]
