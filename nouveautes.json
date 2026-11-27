@@ -1,5 +1,12 @@
 [
  {
+  "v": "1.1.4",
+  "date": "2026-11-27",
+  "items": [
+   "Module de données élèves (eps-core) harmonisé en version 2.7 : import des classes, groupes et fichiers Excel plus fiables."
+  ]
+ },
+ {
   "v": "1.1.0",
   "date": "2026-11-24",
   "titre": "Programmer l'année suivante, sans les listes d'élèves",
